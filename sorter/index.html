@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <title>MRN AutoSorter — Haz Projects</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- ExcelJS CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <!-- Firebase SDK Compat -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script>
+      if (typeof firebase !== 'undefined') {
+        firebase.initializeApp({
+          "apiKey": "AIzaSyBbpOhxS7SdMYjMwFMPdd3jb9ce-ruIGoo",
+          "authDomain": "universe-75161.firebaseapp.com",
+          "messagingSenderId": "1049258710891",
+          "projectId": "universe-75161",
+          "storageBucket": "universe-75161.firebasestorage.app"
+        });
+      }
+    </script>
+    <style>
+        /* ── Design Tokens ── */
+        :root {
+            --bg-dark: #0d0b15;
+            --bg-card: rgba(20, 16, 38, 0.60);
+            --border-color: rgba(192, 132, 252, 0.15);
+            --border-color-hover: rgba(192, 132, 252, 0.5);
+            --text-primary: #f0ecff;
+            --text-secondary: #c9bff0;
+            --text-muted: #7a6f9a;
+            --accent-primary: #c084fc;
+            --accent-primary-glow: rgba(192, 132, 252, 0.35);
+            --accent-secondary: #a8d8ea;
+            --accent-secondary-glow: rgba(168, 216, 234, 0.35);
+            --accent-gold: #ffc3a0;
+            --success: #50fa7b;
+            --error: #ff5555;
+            --font-heading: 'Outfit', -apple-system, sans-serif;
+            --font-body: 'Inter', -apple-system, sans-serif;
+            --blur-strength: 20px;
+            --transition-speed: 0.3s;
+        }
+
+        /* ── Reset ── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── Background orbs ── */
+        .mesh-gradient {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image:
+                radial-gradient(at 0% 0%, rgba(192, 132, 252, 0.2) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(168, 216, 234, 0.2) 0px, transparent 50%);
+            z-index: -2; pointer-events: none;
+            animation: rotate-gradient 30s infinite linear;
+        }
+        @keyframes rotate-gradient {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
+        }
+        .glow-orb { position: fixed; border-radius: 50%; filter: blur(120px); z-index: -1; opacity: 0.3; pointer-events: none; }
+        .orb-1 { width: 45vw; height: 45vw; background: radial-gradient(circle, var(--accent-primary) 0%, transparent 70%); top: -10%; right: 5%; animation: orb-float-1 14s infinite alternate ease-in-out; }
+        .orb-2 { width: 40vw; height: 40vw; background: radial-gradient(circle, var(--accent-secondary) 0%, transparent 70%); bottom: -10%; left: 5%; animation: orb-float-2 12s infinite alternate ease-in-out; }
+        @keyframes orb-float-1 { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(-5vw, 20vh) scale(0.9); } }
+        @keyframes orb-float-2 { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(5vw, -15vh) scale(1.1); } }
+
+        /* ── Layout ── */
+        .hidden { display: none !important; }
+
+        .sorter-container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 40px 24px 80px;
+            position: relative;
+            z-index: 3;
+        }
+
+        /* ── Canvas FX Layers ── */
+        .fx-canvas {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .fx-trail {
+            z-index: 2;
+        }
+
+        /* ── Cursor-tracked Background Gradient ── */
+        .cursor-bg {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background: radial-gradient(
+                600px circle at var(--cx, 50%) var(--cy, 40%),
+                rgba(192, 132, 252, 0.12) 0%,
+                rgba(168, 216, 234, 0.07) 40%,
+                transparent 70%
+            );
+            transition: background 0.05s linear;
+        }
+
+        /* ── Sorter header ── */
+        .sorter-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 32px;
+        }
+        .haz-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+        .haz-brand-title {
+            font-family: var(--font-heading);
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            background: linear-gradient(135deg, #c084fc, #a8d8ea);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .back-link {
+            display: inline-flex; align-items: center; gap: 8px;
+            color: var(--text-muted); text-decoration: none;
+            font-family: var(--font-heading); font-weight: 600; font-size: 0.88rem;
+            transition: color var(--transition-speed), transform var(--transition-speed);
+            padding: 6px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.03);
+        }
+        .back-link:hover { color: var(--accent-primary); transform: translateX(-3px); border-color: var(--accent-primary); }
+        .back-link svg { width: 15px; height: 15px; }
+
+        /* ── Glass card ── */
+        .glass-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(var(--blur-strength));
+            -webkit-backdrop-filter: blur(var(--blur-strength));
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            box-shadow: 0 8px 32px 0 rgba(0,0,0,0.4);
+            transition: border-color var(--transition-speed);
+        }
+
+        .sorter-card { padding: 28px; }
+
+        /* ── Sorter title ── */
+        .sorter-title-area {
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 16px;
+        }
+        .sorter-title-area h2 {
+            font-family: var(--font-heading);
+            font-size: 1.7rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .sorter-title-area p { color: var(--text-muted); font-size: 0.9rem; margin-top: 6px; }
+
+        /* ── Rules area ── */
+        .rules-area {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+        @media (max-width: 640px) { .rules-area { grid-template-columns: 1fr; } }
+
+        .form-group { margin-bottom: 0; }
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            font-family: var(--font-heading);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* ── Inputs ── */
+        input[type="text"], input[type="number"], textarea, select {
+            width: 100%;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 10px 14px;
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            font-size: 0.9rem;
+            transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
+        }
+        input:focus, textarea:focus { outline: none; border-color: var(--accent-primary); box-shadow: 0 0 0 3px var(--accent-primary-glow); }
+
+        /* ── Buttons ── */
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            border-radius: 10px; font-family: var(--font-heading); font-weight: 600;
+            font-size: 0.9rem; padding: 10px 20px; cursor: pointer;
+            transition: all var(--transition-speed); border: 1px solid transparent;
+        }
+        .btn svg { width: 18px; height: 18px; }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary), #a855f7);
+            color: white;
+            box-shadow: 0 4px 14px 0 var(--accent-primary-glow);
+        }
+        .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px 0 rgba(168,85,247,0.5); }
+        .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+        .btn-secondary {
+            background: rgba(255,255,255,0.05);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+        .btn-secondary:hover { background: rgba(255,255,255,0.10); border-color: var(--accent-primary); }
+
+        /* ── Dropzone ── */
+        .dropzone {
+            border: 2px dashed var(--border-color);
+            border-radius: 14px;
+            padding: 36px 20px;
+            text-align: center;
+            cursor: pointer;
+            background: rgba(255,255,255,0.02);
+            transition: all var(--transition-speed);
+            margin-bottom: 20px;
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+        }
+        .dropzone:hover, .dropzone.dragover {
+            border-color: var(--accent-secondary);
+            background: rgba(168,216,234,0.04);
+            box-shadow: 0 0 20px var(--accent-secondary-glow);
+        }
+        .dropzone svg { width: 44px; height: 44px; color: var(--text-muted); transition: color var(--transition-speed); }
+        .dropzone:hover svg { color: var(--accent-secondary); }
+
+        /* ── File info ── */
+        .file-info {
+            display: flex; align-items: center; gap: 12px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border-color);
+            padding: 12px 18px; border-radius: 10px; margin-top: 10px; font-size: 0.9rem;
+        }
+        .file-info svg { color: var(--success); width: 20px; height: 20px; }
+
+        /* ── Log panel ── */
+        .log-panel {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.82rem;
+            color: #a0f0a0;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 18px;
+            scrollbar-width: thin;
+        }
+        .log-entry { margin-bottom: 5px; }
+        .log-entry.info  { color: #a8d8ea; }
+        .log-entry.warn  { color: #ffc3a0; }
+        .log-entry.error { color: #ff5555; }
+        .log-entry.success { color: #50fa7b; }
+
+        /* ── Preview table ── */
+        .preview-table-container {
+            width: 100%; overflow-x: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin-top: 24px;
+            background: rgba(0,0,0,0.2);
+        }
+        .preview-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; text-align: left; }
+        .preview-table th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: #110e20;
+            border-bottom: 1.5px solid var(--border-color);
+            padding: 11px 14px;
+            font-family: var(--font-heading); font-weight: 600; color: var(--text-secondary);
+        }
+        .preview-table td { padding: 9px 14px; border-bottom: 1px solid rgba(192,132,252,0.05); color: var(--text-primary); white-space: nowrap; }
+        .preview-table tr.separated-row { background: rgba(255,85,85,0.05); }
+        .badge-separated { background: rgba(255,85,85,0.2); color: #ff5555; padding: 2px 6px; border-radius: 4px; font-size: 0.72rem; font-weight: 600; border: 1px solid rgba(255,85,85,0.3); }
+        .badge-normal    { background: rgba(80,250,123,0.15); color: #50fa7b; padding: 2px 6px; border-radius: 4px; font-size: 0.72rem; font-weight: 600; border: 1px solid rgba(80,250,123,0.3); }
+    </style>
+</head>
+<body>
+    <div class="mesh-gradient"></div>
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+
+    <!-- Cursor-tracking drift background -->
+    <div class="cursor-bg" id="cursor-bg"></div>
+
+    <!-- Snow / floating particles -->
+    <canvas id="snow-canvas" class="fx-canvas"></canvas>
+
+    <!-- Cursor trail -->
+    <canvas id="trail-canvas" class="fx-canvas fx-trail"></canvas>
+
+    <div class="sorter-container">
+        <!-- Header: haz. brand + back button -->
+        <header class="sorter-header">
+            <a href="/" class="haz-brand" aria-label="Back to Haz Projects">
+                <!-- Haz diamond logo (inline SVG) -->
+                <svg width="36" height="36" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <filter id="lg2" x="-60%" y="-60%" width="220%" height="220%">
+                            <feGaussianBlur stdDeviation="2.5" result="b"/>
+                            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+                        </filter>
+                        <linearGradient id="dg2" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#c084fc"/>
+                            <stop offset="100%" stop-color="#a8d8ea"/>
+                        </linearGradient>
+                    </defs>
+                    <polygon points="22,2 40,22 22,42 4,22" fill="url(#dg2)" filter="url(#lg2)" opacity="0.95"/>
+                    <polygon points="22,10 34,22 22,34 10,22" fill="#0d0b15"/>
+                    <line x1="22" y1="16" x2="22" y2="28" stroke="#c084fc" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
+                    <line x1="16" y1="22" x2="28" y2="22" stroke="#a8d8ea" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
+                    <circle cx="22" cy="22" r="2.2" fill="#ffffff" opacity="0.9" filter="url(#lg2)"/>
+                    <circle cx="36" cy="8" r="1.4" fill="#ffc3a0" opacity="0.9" filter="url(#lg2)"/>
+                    <line x1="36" y1="5.5" x2="36" y2="10.5" stroke="#ffc3a0" stroke-width="0.8" opacity="0.7"/>
+                    <line x1="33.5" y1="8" x2="38.5" y2="8" stroke="#ffc3a0" stroke-width="0.8" opacity="0.7"/>
+                    <circle cx="9" cy="36" r="1.1" fill="#a8d8ea" opacity="0.7" filter="url(#lg2)"/>
+                </svg>
+                <span class="haz-brand-title">haz.</span>
+            </a>
+            <a href="/" class="back-link">
+                <i data-lucide="arrow-left"></i>
+                <span>All Projects</span>
+            </a>
+        </header>
+
+        <div class="glass-card sorter-card">
+            <div class="sorter-title-area">
+                <h2>
+                    <i data-lucide="database" style="color: var(--accent-primary);"></i>
+                    MRN AutoSorter
+                </h2>
+                <p>Upload your Excel file to automatically sort and separate MRN records. Shoplot MRN rows are moved to the bottom.</p>
+            </div>
+
+            <div class="rules-area" style="grid-template-columns: 1.2fr 1fr; gap: 16px; margin-bottom: 16px;">
+                <!-- Column 1: Add New Rules & Year -->
+                <div class="form-group" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 130px;">
+                    <div style="display: flex; flex-direction: column;">
+                        <label for="range-input">Add Separation Rules</label>
+                        <textarea id="range-input" style="font-size: 0.82rem; padding: 6px 10px; resize: none; height: 54px; width: 100%;" placeholder="E.g. 3600-4000 (appends to active rules)"></textarea>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px;">
+                        <button id="save-rules-btn" class="btn btn-secondary" style="padding: 5px 12px; font-size: 0.8rem; height: 28px; display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+                            <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
+                            <span>Add Rules</span>
+                        </button>
+                        <button id="clear-rules-btn" class="btn btn-secondary" style="padding: 5px 12px; font-size: 0.8rem; height: 28px; border-color: rgba(255,85,85,0.3); color: #ff5555; background: rgba(255,85,85,0.05); display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+                            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                            <span>Clear All</span>
+                        </button>
+                        <div style="display: flex; align-items: center; gap: 6px; margin-left: auto; white-space: nowrap;">
+                            <label for="cutoff-input" style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 500; margin: 0;">OLD MRN Cutoff Year:</label>
+                            <input type="number" id="cutoff-input" value="2016" min="1900" max="2100" style="width: 72px; height: 28px; padding: 0 6px; text-align: center;">
+                        </div>
+                    </div>
+                </div>
+                <!-- Column 2: Active Rules Display -->
+                <div class="form-group" style="display: flex; flex-direction: column; height: 130px;">
+                    <label>Active Rules Database</label>
+                    <div id="rules-summary" style="flex: 1; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 10px; font-size: 0.78rem; color: var(--text-secondary); overflow-y: auto; scrollbar-width: thin;">
+                        No rules configured.
+                    </div>
+                </div>
+            </div>
+
+            <div class="dropzone" id="dropzone" style="padding: 24px 20px; gap: 8px;">
+                <i data-lucide="upload-cloud"></i>
+                <div style="font-family: var(--font-heading); font-weight: 600; font-size: 1rem; color: var(--text-primary);">Drag and Drop Excel File Here</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">Only .xlsx files are supported</div>
+                <input type="file" id="file-input" accept=".xlsx" style="display: none;">
+                <button type="button" class="btn btn-secondary" id="browse-btn" style="pointer-events: none; padding: 6px 14px; font-size: 0.82rem;">Browse File</button>
+            </div>
+
+            <div id="selected-file-details" class="hidden"></div>
+
+            <div style="margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
+                <button id="process-btn" class="btn btn-primary" disabled>
+                    <i data-lucide="shuffle"></i>
+                    <span>Separate &amp; Sort Excel</span>
+                </button>
+                <button id="download-btn" class="btn btn-secondary hidden" style="background: linear-gradient(135deg, var(--success), #22c55e); border-color: rgba(80,250,123,0.3); color: #090714;">
+                    <i data-lucide="download"></i>
+                    <span>Download Processed File</span>
+                </button>
+                <a href="PatientRegister_20260130163119512.xlsx" download class="btn btn-secondary" style="border-color: var(--accent-secondary); color: var(--accent-secondary);">
+                    <i data-lucide="file-spreadsheet"></i>
+                    <span>Download Patient Register (Jan 2026)</span>
+                </a>
+            </div>
+
+            <div id="log-panel" class="log-panel hidden"></div>
+
+            <div id="preview-section" class="hidden">
+                <h3 style="font-family: var(--font-heading); font-size: 1.1rem; margin-top: 28px; margin-bottom: 10px; color: var(--text-secondary);">Processed Preview</h3>
+                <div class="preview-table-container" style="max-height: 420px; overflow-y: auto;">
+                    <table class="preview-table">
+                        <thead id="preview-thead"></thead>
+                        <tbody id="preview-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+
+            // Cursor drift ambient background effect
+            const bg = document.getElementById('cursor-bg');
+            let mouseX = 50, mouseY = 50, curX = 50, curY = 50;
+            window.addEventListener('mousemove', e => {
+                mouseX = (e.clientX / window.innerWidth) * 100;
+                mouseY = (e.clientY / window.innerHeight) * 100;
+            });
+            function animate() {
+                curX += (mouseX - curX) * 0.06;
+                curY += (mouseY - curY) * 0.06;
+                if (bg) {
+                    bg.style.setProperty('--cx', curX + '%');
+                    bg.style.setProperty('--cy', curY + '%');
+                }
+                requestAnimationFrame(animate);
+            }
+            animate();
+
+            // Brand Colors
+            const BRAND_COLORS = ['#c084fc', '#a8d8ea', '#ffc3a0'];
+
+            // Cursor trail — glowing ring particles
+            const trailCanvas = document.getElementById('trail-canvas');
+            if (trailCanvas) {
+                const ctx = trailCanvas.getContext('2d');
+                const resize = () => { trailCanvas.width = window.innerWidth; trailCanvas.height = window.innerHeight; };
+                resize();
+                window.addEventListener('resize', resize);
+
+                const particles = [];
+                window.addEventListener('mousemove', (e) => {
+                    for (let i = 0; i < 2; i++) {
+                        const color = BRAND_COLORS[Math.floor(Math.random() * BRAND_COLORS.length)];
+                        particles.push({
+                            x: e.clientX + (Math.random() - 0.5) * 6,
+                            y: e.clientY + (Math.random() - 0.5) * 6,
+                            r: Math.random() * 3.5 + 1.5,
+                            alpha: 0.85,
+                            color,
+                            vx: (Math.random() - 0.5) * 0.8,
+                            vy: -(Math.random() * 1.2 + 0.3),
+                            decay: Math.random() * 0.022 + 0.014,
+                        });
+                    }
+                });
+
+                function animateTrail() {
+                    ctx.clearRect(0, 0, trailCanvas.width, trailCanvas.height);
+                    for (let i = particles.length - 1; i >= 0; i--) {
+                        const p = particles[i];
+                        p.x  += p.vx;
+                        p.y  += p.vy;
+                        p.vy += 0.02;
+                        p.r  *= 0.978;
+                        p.alpha -= p.decay;
+                        if (p.alpha <= 0 || p.r < 0.3) { particles.splice(i, 1); continue; }
+
+                        ctx.save();
+                        ctx.globalAlpha = p.alpha;
+                        ctx.shadowBlur  = 10;
+                        ctx.shadowColor = p.color;
+                        ctx.strokeStyle = p.color;
+                        ctx.lineWidth   = 1.2;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                        ctx.stroke();
+
+                        ctx.globalAlpha = p.alpha * 0.6;
+                        ctx.fillStyle   = '#ffffff';
+                        ctx.shadowBlur  = 4;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.r * 0.25, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.restore();
+                    }
+                    requestAnimationFrame(animateTrail);
+                }
+                animateTrail();
+            }
+
+            // Snow / floating particles
+            const snowCanvas = document.getElementById('snow-canvas');
+            if (snowCanvas) {
+                const ctx = snowCanvas.getContext('2d');
+                const resize = () => { snowCanvas.width = window.innerWidth; snowCanvas.height = window.innerHeight; };
+                resize();
+                window.addEventListener('resize', resize);
+
+                const COUNT = 70;
+                const flakes = Array.from({ length: COUNT }, () => ({
+                    x:     Math.random() * window.innerWidth,
+                    y:     Math.random() * window.innerHeight,
+                    r:     Math.random() * 1.6 + 0.4,
+                    speed: Math.random() * 0.55 + 0.2,
+                    drift: (Math.random() - 0.5) * 0.25,
+                    alpha: Math.random() * 0.35 + 0.08,
+                    color: BRAND_COLORS[Math.floor(Math.random() * BRAND_COLORS.length)],
+                    twinkle: Math.random() * Math.PI * 2,
+                }));
+
+                let frame = 0;
+                function animateSnow() {
+                    ctx.clearRect(0, 0, snowCanvas.width, snowCanvas.height);
+                    frame++;
+                    for (const f of flakes) {
+                        f.y += f.speed;
+                        f.x += f.drift;
+                        f.x += Math.sin(frame * 0.008 + f.twinkle) * 0.18;
+
+                        if (f.y > snowCanvas.height + 4) { f.y = -4; f.x = Math.random() * snowCanvas.width; }
+                        if (f.x > snowCanvas.width + 4)  f.x = -4;
+                        if (f.x < -4)                f.x = snowCanvas.width + 4;
+
+                        const twinkledAlpha = f.alpha * (0.75 + 0.25 * Math.sin(frame * 0.04 + f.twinkle));
+
+                        ctx.save();
+                        ctx.globalAlpha = twinkledAlpha;
+                        ctx.shadowBlur  = 6;
+                        ctx.shadowColor = f.color;
+                        ctx.fillStyle   = f.color;
+                        ctx.beginPath();
+                        ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.restore();
+                    }
+                    requestAnimationFrame(animateSnow);
+                }
+                animateSnow();
+            }
+
+            const db = typeof firebase !== 'undefined' ? firebase.firestore() : null;
+
+            const dropzone = document.getElementById('dropzone');
+            const fileInput = document.getElementById('file-input');
+            const rangeInput = document.getElementById('range-input');
+            const cutoffInput = document.getElementById('cutoff-input');
+            const rulesSummary = document.getElementById('rules-summary');
+            const saveRulesBtn = document.getElementById('save-rules-btn');
+            const processBtn = document.getElementById('process-btn');
+            const downloadBtn = document.getElementById('download-btn');
+            const selectedFileDetails = document.getElementById('selected-file-details');
+            const logPanel = document.getElementById('log-panel');
+            const previewSection = document.getElementById('preview-section');
+            const previewThead = document.getElementById('preview-thead');
+            const previewTbody = document.getElementById('preview-tbody');
+
+            let activeFile = null;
+            let processedFileName = '';
+            let activeRulesStr = '';
+
+            let g_sortedRows = [];
+            let g_origWorkbook = null;
+            let g_origSheetName = 'Sheet1';
+            let g_origSheetHeaderRow = null;
+            let g_origHeaders = [];
+            let g_mrnIdx = 1;
+            let g_oldMrnIdx = 3;
+            let g_finalHeaders = [];
+            let g_finalHeaderStyles = [];
+            let g_keepIndices = [];
+            let g_finalMrnColLetter = 'A';
+            let g_finalOldMrnColLetter = 'E';
+
+            function getColLetter(colIdx) {
+                let temp = colIdx; let letter = '';
+                while (temp > 0) { let modulo = (temp - 1) % 26; letter = String.fromCharCode(65 + modulo) + letter; temp = Math.floor((temp - modulo) / 26); }
+                return letter;
+            }
+
+            async function loadRules() {
+                try {
+                    if (db) {
+                        const doc = await db.collection('settings').doc('sorter_ranges').get();
+                        if (doc.exists) { const data = doc.data(); if (data && data.ranges) { activeRulesStr = data.ranges; updateRulesSummary(); rangeInput.value = ''; return; } }
+                    }
+                } catch (err) { console.warn('Firestore unavailable, using localStorage:', err); }
+                activeRulesStr = localStorage.getItem('sorter_range_rules') || '3600-4000';
+                rangeInput.value = '';
+                updateRulesSummary();
+            }
+            loadRules();
+
+            saveRulesBtn.addEventListener('click', async () => {
+                const newRules = rangeInput.value.trim();
+                if (!newRules) { alert('Please enter new rules to add first!'); return; }
+                
+                const existingTokens = activeRulesStr.split(/[\n,]+/).map(t => t.trim()).filter(Boolean);
+                const newTokens = newRules.split(/[\n,]+/).map(t => t.trim()).filter(Boolean);
+                
+                // Filter out new tokens that already exist (whitespace-insensitive comparison)
+                const uniqueNewTokens = newTokens.filter(newToken => {
+                    const normalizedNew = newToken.replace(/\s+/g, '');
+                    return !existingTokens.some(existingToken => existingToken.replace(/\s+/g, '') === normalizedNew);
+                });
+
+                if (uniqueNewTokens.length === 0) {
+                    alert('The rule(s) you entered already exist in the database!');
+                    rangeInput.value = '';
+                    return;
+                }
+
+                const combined = [...existingTokens, ...uniqueNewTokens].join('\n');
+                try {
+                    if (db) {
+                        await db.collection('settings').doc('sorter_ranges').set({ ranges: combined, updatedAt: new Date().toISOString() });
+                        activeRulesStr = combined;
+                        localStorage.setItem('sorter_range_rules', combined);
+                        updateRulesSummary(); rangeInput.value = '';
+                        addLog('Unique rules added to database!', 'success'); alert('Rules added!');
+                    } else throw new Error('Firebase not initialized.');
+                } catch (err) { addLog('Saved to local memory only (Cloud offline).', 'warn'); alert('Saved locally.'); }
+            });
+
+            const clearRulesBtn = document.getElementById('clear-rules-btn');
+            clearRulesBtn.addEventListener('click', async () => {
+                if (!confirm('Clear all active rules from the database?')) return;
+                try {
+                    if (db) { await db.collection('settings').doc('sorter_ranges').set({ ranges: '', updatedAt: new Date().toISOString() }); }
+                    activeRulesStr = ''; localStorage.setItem('sorter_range_rules', '');
+                    updateRulesSummary(); rangeInput.value = '';
+                    addLog('All rules cleared.', 'warn'); alert('Rules cleared!');
+                } catch (err) { alert('Failed to clear rules.'); }
+            });
+
+            dropzone.addEventListener('click', () => fileInput.click());
+            dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+            dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+            dropzone.addEventListener('drop', (e) => { e.preventDefault(); dropzone.classList.remove('dragover'); if (e.dataTransfer.files.length > 0) handleFileSelect(e.dataTransfer.files[0]); });
+            fileInput.addEventListener('change', (e) => { if (e.target.files.length > 0) handleFileSelect(e.target.files[0]); });
+
+            function updateRulesSummary() {
+                if (!rulesSummary) return;
+                const rules = parseRules(activeRulesStr);
+                if (rules.length === 0) { rulesSummary.innerHTML = '<span style="color: var(--text-muted);">No active rules.</span>'; return; }
+                let html = '<ul style="padding-left:0;margin:0;list-style-type:none;display:flex;flex-direction:column;gap:6px;width:100%;">';
+                rules.forEach((rule, idx) => {
+                    let ruleText = '';
+                    if (rule.type === 'range') {
+                        ruleText = `Range: <strong>${String(rule.start).padStart(4,'0')}</strong> – <strong>${String(rule.end).padStart(4,'0')}</strong>`;
+                    } else {
+                        ruleText = `Exact: <strong>${String(rule.value).padStart(4,'0')}</strong>`;
+                    }
+                    html += `<li style="display:flex;align-items:center;justify-content:space-between;width:100%;font-size:0.78rem;">
+                        <span style="color: var(--text-secondary);">${ruleText}</span>
+                        <button type="button" class="delete-rule-btn" data-index="${idx}" style="color: #ff5555; background: none; border: none; cursor: pointer; padding: 2px 4px; display: inline-flex; align-items: center;" title="Delete Rule">
+                            <i data-lucide="trash-2" style="width: 13px; height: 13px;"></i>
+                        </button>
+                    </li>`;
+                });
+                html += '</ul>';
+                rulesSummary.innerHTML = html;
+                lucide.createIcons();
+
+                // Attach click listeners to the delete buttons
+                const deleteBtns = rulesSummary.querySelectorAll('.delete-rule-btn');
+                deleteBtns.forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        const indexToDelete = parseInt(btn.getAttribute('data-index'), 10);
+                        await deleteRule(indexToDelete);
+                    });
+                });
+            }
+
+            async function deleteRule(indexToDelete) {
+                const rules = parseRules(activeRulesStr);
+                rules.splice(indexToDelete, 1);
+                const updatedRulesStr = rules.map(rule => {
+                    if (rule.type === 'range') return `${rule.start}-${rule.end}`;
+                    return rule.value;
+                }).join('\n');
+
+                try {
+                    if (db) {
+                        await db.collection('settings').doc('sorter_ranges').set({
+                            ranges: updatedRulesStr,
+                            updatedAt: new Date().toISOString()
+                        });
+                        activeRulesStr = updatedRulesStr;
+                        localStorage.setItem('sorter_range_rules', updatedRulesStr);
+                        updateRulesSummary();
+                        addLog('Rule deleted from database.', 'warn');
+                    } else throw new Error('Firebase not initialized.');
+                } catch (err) {
+                    activeRulesStr = updatedRulesStr;
+                    localStorage.setItem('sorter_range_rules', updatedRulesStr);
+                    updateRulesSummary();
+                    addLog('Rule deleted locally (Cloud offline).', 'warn');
+                }
+            }
+
+            function parseRules(text) {
+                const tokens = text.split(/[\n,]+/).map(t => t.trim()).filter(Boolean);
+                return tokens.map(token => {
+                    if (token.includes('-')) { const parts = token.split('-'); return { type: 'range', start: parts[0].trim(), end: parts[1].trim() }; }
+                    return { type: 'single', value: token };
+                });
+            }
+
+            function handleFileSelect(file) {
+                if (!file.name.endsWith('.xlsx')) { alert('Please select a valid Excel file (.xlsx)'); return; }
+                activeFile = file;
+                selectedFileDetails.classList.remove('hidden');
+                selectedFileDetails.innerHTML = `<div class="file-info"><i data-lucide="file-spreadsheet"></i><div><strong>${file.name}</strong> (${(file.size/1024).toFixed(1)} KB)</div></div>`;
+                lucide.createIcons();
+                processBtn.disabled = false;
+                downloadBtn.classList.add('hidden');
+                previewSection.classList.add('hidden');
+                logPanel.classList.add('hidden');
+                addLog(`Loaded: ${file.name}`, 'info');
+            }
+
+            function addLog(message, type = 'info') {
+                logPanel.classList.remove('hidden');
+                const entry = document.createElement('div');
+                entry.className = `log-entry ${type}`;
+                entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+                logPanel.appendChild(entry);
+                logPanel.scrollTop = logPanel.scrollHeight;
+            }
+
+            processBtn.addEventListener('click', async () => {
+                if (!activeFile) return;
+                processBtn.disabled = true;
+                processBtn.innerHTML = '<span>Processing...</span>';
+                logPanel.innerHTML = '';
+                addLog('Reading Excel file...', 'info');
+
+                try {
+                    const reader = new FileReader();
+                    reader.onload = async (e) => {
+                        try {
+                            const buffer = e.target.result;
+                            const workbook = new ExcelJS.Workbook();
+                            await workbook.xlsx.load(buffer);
+
+                            const sheet = workbook.worksheets[0] || workbook.addWorksheet('Sheet1');
+                            addLog(`Sheet: "${sheet.name}". Rows: ${sheet.rowCount}`, 'info');
+
+                            const combinedRulesText = (activeRulesStr + '\n' + rangeInput.value).trim();
+                            const rules = parseRules(combinedRulesText);
+                            if (rules.length === 0) throw new Error('No separation rules configured!');
+
+                            const groupARows = [], groupBRows = [], shoplotRows = [];
+                            const headerRow = sheet.getRow(1);
+                            const headers = [];
+                            headerRow.eachCell({ includeEmpty: true }, (cell) => headers.push(cell.value));
+
+                            let mrnIdx = 1, oldMrnIdx = 3;
+                            headers.forEach((h, idx) => {
+                                const name = String(h || '').trim().toUpperCase();
+                                if (name === 'MRN') mrnIdx = idx + 1;
+                                if (name === 'OLD MRN') oldMrnIdx = idx + 1;
+                            });
+
+                            const newHeaders = [], newHeaderStyles = [];
+                            const origHeaderRow = sheet.getRow(1);
+                            for (let c = 1; c <= headers.length; c++) {
+                                const srcCell = origHeaderRow.getCell(c);
+                                const style = { font: srcCell.font ? JSON.parse(JSON.stringify(srcCell.font)) : undefined, fill: srcCell.fill ? JSON.parse(JSON.stringify(srcCell.fill)) : undefined, border: srcCell.border ? JSON.parse(JSON.stringify(srcCell.border)) : undefined, alignment: srcCell.alignment ? JSON.parse(JSON.stringify(srcCell.alignment)) : undefined };
+                                newHeaders.push(headers[c-1]); newHeaderStyles.push(style);
+                                if (c === mrnIdx) { newHeaders.push('MRN (4 Digits)'); newHeaderStyles.push(JSON.parse(JSON.stringify(style))); newHeaders.push('MRN (2 Digits)'); newHeaderStyles.push(JSON.parse(JSON.stringify(style))); }
+                                if (c === oldMrnIdx) { newHeaders.push('OLD MRN Year'); newHeaderStyles.push(JSON.parse(JSON.stringify(style))); }
+                            }
+
+                            const excludedHeadersUpper = ['DATE','START TIME','DURATION','WALK-IN APPOINTMENT TIME','DR. CODE','MEDICAL DEPARTMENT ID','MEDICAL DEPARTMENT','ADMISSION STATUS','INSERT DATE','INSERT USER','REFERENCE','APPOINTMENT NOTE'];
+                            g_keepIndices = []; g_finalHeaders = []; g_finalHeaderStyles = [];
+                            newHeaders.forEach((h, idx) => {
+                                if (!excludedHeadersUpper.includes(String(h || '').trim().toUpperCase())) {
+                                    g_keepIndices.push(idx); g_finalHeaders.push(h); g_finalHeaderStyles.push(newHeaderStyles[idx]);
+                                }
+                            });
+
+                            g_finalMrnColLetter = 'A'; g_finalOldMrnColLetter = 'E';
+                            g_finalHeaders.forEach((h, idx) => {
+                                const name = String(h || '').trim().toUpperCase();
+                                if (name === 'MRN') g_finalMrnColLetter = getColLetter(idx+1);
+                                if (name === 'OLD MRN') g_finalOldMrnColLetter = getColLetter(idx+1);
+                            });
+
+                            const cutoffYear = parseInt(cutoffInput.value, 10) || 2016;
+                            addLog(`Parsing rows... (Cutoff Year: ${cutoffYear})`, 'info');
+                            let movedCount = 0;
+
+                            for (let r = 2; r <= sheet.rowCount; r++) {
+                                const row = sheet.getRow(r);
+                                let isEmpty = true;
+                                row.eachCell({ includeEmpty: false }, () => { isEmpty = false; });
+                                if (isEmpty) continue;
+
+                                const cellA = row.getCell(mrnIdx);
+                                let valA = cellA.value;
+                                if (valA && typeof valA === 'object' && valA.result !== undefined) valA = valA.result;
+                                const mrnStr = valA !== null && valA !== undefined ? String(valA).trim() : '';
+
+                                const cellC = row.getCell(oldMrnIdx);
+                                let valC = cellC.value;
+                                if (valC && typeof valC === 'object' && valC.result !== undefined) valC = valC.result;
+                                const oldMrnStr = valC !== null && valC !== undefined ? String(valC).trim() : '';
+
+                                const digitsOnly = mrnStr.replace(/\D/g, '');
+                                const codeString = digitsOnly.slice(-4).padStart(4, '0');
+                                const numCode = parseInt(codeString, 10);
+
+                                let oldMrnYear = null;
+                                if (oldMrnStr) { const last4 = oldMrnStr.slice(-4); if (/^\d{4}$/.test(last4)) oldMrnYear = parseInt(last4, 10); }
+
+                                let isShoplot = false;
+                                for (const rule of rules) {
+                                    if (isNaN(numCode)) break;
+                                    if (rule.type === 'range') {
+                                        const startStr = rule.start.padStart(4,'0'), endStr = rule.end.padStart(4,'0'), codeStr = codeString;
+                                        const suffixStart = startStr.slice(-2), suffixEnd = endStr.slice(-2), suffixCode = codeStr.slice(-2);
+                                        const prefixStart = parseInt(startStr.slice(0,2),10), prefixEnd = parseInt(endStr.slice(0,2),10), prefixCode = parseInt(codeStr.slice(0,2),10);
+                                        if (suffixStart === suffixEnd) { if (suffixCode === suffixStart && prefixCode >= prefixStart && prefixCode <= prefixEnd) { isShoplot = true; break; } }
+                                        else { const sc = parseInt(suffixCode,10), ss = parseInt(suffixStart,10), se = parseInt(suffixEnd,10); if (sc >= ss && sc <= se && prefixCode >= prefixStart && prefixCode <= prefixEnd) { isShoplot = true; break; } }
+                                    } else if (rule.type === 'single') { if (codeString === rule.value.padStart(4,'0')) { isShoplot = true; break; } }
+                                }
+
+                                const rowData = { originalIndex: r, isSeparated: isShoplot, mrnVal: mrnStr, oldMrnStr, oldMrnYear, cells: [], numericCode: parseInt(codeString) };
+                                for (let c = 1; c <= sheet.columnCount; c++) {
+                                    const cell = row.getCell(c);
+                                    rowData.cells.push({ isComputed: false, value: cell.value, style: { font: cell.font ? JSON.parse(JSON.stringify(cell.font)) : undefined, fill: cell.fill ? JSON.parse(JSON.stringify(cell.fill)) : undefined, border: cell.border ? JSON.parse(JSON.stringify(cell.border)) : undefined, alignment: cell.alignment ? JSON.parse(JSON.stringify(cell.alignment)) : undefined, numFmt: cell.numFmt || undefined } });
+                                    if (c === mrnIdx) { rowData.cells.push({ isComputed: true, type: 'mrn_4' }); rowData.cells.push({ isComputed: true, type: 'mrn_2' }); }
+                                    if (c === oldMrnIdx) rowData.cells.push({ isComputed: true, type: 'old_mrn_year' });
+                                }
+
+                                if (isShoplot) { shoplotRows.push(rowData); movedCount++; addLog(`Row ${r} (MRN: ${mrnStr}) → Shoplot (bottom)`, 'warn'); }
+                                else if (oldMrnYear === null || oldMrnYear <= cutoffYear) groupARows.push(rowData);
+                                else groupBRows.push(rowData);
+                            }
+
+                            addLog(`Sorting Group A (${groupARows.length} rows)...`, 'info');
+                            groupARows.sort((a, b) => { const m2a = String(a.mrnVal).slice(-2), m2b = String(b.mrnVal).slice(-2); if (m2a !== m2b) return m2a < m2b ? -1 : 1; const m4a = String(a.mrnVal).slice(-4), m4b = String(b.mrnVal).slice(-4); if (m4a !== m4b) return m4a < m4b ? -1 : 1; return String(a.mrnVal) < String(b.mrnVal) ? -1 : 1; });
+
+                            addLog(`Sorting Group B (${groupBRows.length} rows)...`, 'info');
+                            groupBRows.sort((a, b) => { const ya = String(a.oldMrnYear||9999).padStart(4,'0'), yb = String(b.oldMrnYear||9999).padStart(4,'0'); if (ya !== yb) return ya < yb ? -1 : 1; return String(a.oldMrnStr||'') < String(b.oldMrnStr||'') ? -1 : 1; });
+
+                            const newSheet = workbook.addWorksheet('temp_sorted_data');
+                            const newHeaderRow = newSheet.getRow(1);
+                            g_finalHeaders.forEach((h, idx) => { const cell = newHeaderRow.getCell(idx+1); cell.value = h; const s = g_finalHeaderStyles[idx]; if (s) { if (s.font) cell.font = s.font; if (s.fill) cell.fill = s.fill; if (s.border) cell.border = s.border; if (s.alignment) cell.alignment = s.alignment; } });
+                            newHeaderRow.commit();
+
+                            let currentRowNum = 2;
+                            function writeRowGroup(rowsList) {
+                                rowsList.forEach(rowData => {
+                                    const newRow = newSheet.getRow(currentRowNum);
+                                    g_keepIndices.forEach((origIndex, finalColIndex) => {
+                                        const cellData = rowData.cells[origIndex];
+                                        const cell = newRow.getCell(finalColIndex+1);
+                                        if (cellData.isComputed) {
+                                            if (cellData.type === 'mrn_4') cell.value = { formula: `RIGHT(${g_finalMrnColLetter}${currentRowNum},4)` };
+                                            else if (cellData.type === 'mrn_2') cell.value = { formula: `RIGHT(${g_finalMrnColLetter}${currentRowNum},2)` };
+                                            else if (cellData.type === 'old_mrn_year') cell.value = { formula: `RIGHT(${g_finalOldMrnColLetter}${currentRowNum},4)` };
+                                            cell.font = { name: 'Arial', size: 10 };
+                                        } else {
+                                            let val = cellData.value;
+                                            if (val && typeof val === 'object' && val.formula) val = { formula: updateFormulaRow(val.formula, rowData.originalIndex, currentRowNum), result: val.result };
+                                            cell.value = val;
+                                            if (cellData.style.font) cell.font = cellData.style.font;
+                                            if (cellData.style.fill) cell.fill = cellData.style.fill;
+                                            if (cellData.style.border) cell.border = cellData.style.border;
+                                            if (cellData.style.alignment) cell.alignment = cellData.style.alignment;
+                                            if (cellData.style.numFmt) cell.numFmt = cellData.style.numFmt;
+                                        }
+                                    });
+                                    rowData.newIndex = currentRowNum;
+                                    newRow.commit();
+                                    currentRowNum++;
+                                });
+                            }
+
+                            addLog('Writing Group A rows...', 'info'); writeRowGroup(groupARows);
+                            addLog('Writing Group B rows...', 'info'); writeRowGroup(groupBRows);
+
+                            if (shoplotRows.length > 0) {
+                                addLog('Inserting Shoplot divider...', 'info');
+                                const dividerRow = newSheet.getRow(currentRowNum);
+                                dividerRow.height = 22;
+                                const divCell = dividerRow.getCell(1);
+                                divCell.value = 'Shoplot MRN';
+                                divCell.font = { bold: true, size: 12, color: { argb: 'FF1F1F1F' } };
+                                divCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFD700' } };
+                                divCell.alignment = { vertical: 'middle', horizontal: 'left' };
+                                for (let dc = 2; dc <= g_finalHeaders.length; dc++) { newSheet.getRow(currentRowNum).getCell(dc).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFD700' } }; }
+                                dividerRow.commit(); currentRowNum++;
+                            }
+
+                            addLog('Writing Shoplot rows...', 'info'); writeRowGroup(shoplotRows);
+                            addLog(`Done! Moved ${movedCount} Shoplot rows to bottom.`, 'success');
+
+                            g_mrnIdx = mrnIdx; g_oldMrnIdx = oldMrnIdx;
+                            g_origWorkbook = workbook; g_origSheetName = sheet.name;
+                            g_origSheetHeaderRow = origHeaderRow; g_origHeaders = headers;
+
+                            g_sortedRows = [];
+                            groupARows.forEach(r => g_sortedRows.push({ rowData: r, isDivider: false }));
+                            groupBRows.forEach(r => g_sortedRows.push({ rowData: r, isDivider: false }));
+                            if (shoplotRows.length > 0) { g_sortedRows.push({ isDivider: true }); shoplotRows.forEach(r => g_sortedRows.push({ rowData: r, isDivider: false })); }
+
+                            processedFileName = activeFile.name.replace('.xlsx', '_separated.xlsx');
+                            renderPreview();
+                            downloadBtn.classList.remove('hidden');
+                        } catch (err) {
+                            console.error(err); addLog(`Error: ${err.message}`, 'error');
+                        } finally {
+                            processBtn.disabled = false;
+                            processBtn.innerHTML = '<i data-lucide="shuffle"></i><span>Separate &amp; Sort Excel</span>';
+                            lucide.createIcons();
+                        }
+                    };
+                    reader.readAsArrayBuffer(activeFile);
+                } catch (err) {
+                    addLog(`File read error: ${err.message}`, 'error');
+                    processBtn.disabled = false;
+                    processBtn.innerHTML = '<i data-lucide="shuffle"></i><span>Separate &amp; Sort Excel</span>';
+                    lucide.createIcons();
+                }
+            });
+
+            function updateFormulaRow(formulaStr, oldRow, newRow) {
+                if (!formulaStr || typeof formulaStr !== 'string') return formulaStr;
+                return formulaStr.replace(/([A-Z]+)([0-9]+)/g, (match, col, row) => parseInt(row) === oldRow ? col + newRow : match);
+            }
+
+            function renderPreview() {
+                previewSection.classList.remove('hidden');
+                previewThead.innerHTML = `<tr><th>#</th><th>Status</th>${g_finalHeaders.map(h => `<th>${h||''}</th>`).join('')}</tr>`;
+                let rowNum = 2;
+                previewTbody.innerHTML = g_sortedRows.map(entry => {
+                    if (entry.isDivider) return `<tr style="background:rgba(255,215,0,0.12);"><td colspan="${g_finalHeaders.length+2}" style="padding:8px 14px;font-weight:700;color:#FFD700;font-size:0.85rem;">⭐ SHOPLOT MRN</td></tr>`;
+                    const r = entry.rowData; r.newIndex = rowNum++;
+                    const statusBadge = r.isSeparated ? '<span class="badge-separated">Separated</span>' : '<span class="badge-normal">Normal</span>';
+                    const cellsHtml = g_keepIndices.map(origIdx => {
+                        const c = r.cells[origIdx]; let text = c.value;
+                        if (c.isComputed) { if (c.type === 'mrn_4') text = r.mrnVal ? r.mrnVal.slice(-4) : ''; else if (c.type === 'mrn_2') text = r.mrnVal ? r.mrnVal.slice(-2) : ''; else if (c.type === 'old_mrn_year') text = r.oldMrnYear || ''; }
+                        else if (text && typeof text === 'object') text = text.formula ? `=${text.formula}` : (text.result ?? '');
+                        return `<td>${text === null || text === undefined ? '' : String(text).substring(0,80)}</td>`;
+                    }).join('');
+                    return `<tr class="${r.isSeparated ? 'separated-row' : ''}"><td style="font-weight:bold;color:var(--text-muted);">${r.newIndex}</td><td>${statusBadge}</td>${cellsHtml}</tr>`;
+                }).join('');
+            }
+
+            downloadBtn.addEventListener('click', async () => {
+                if (!g_sortedRows.length) return;
+                addLog('Building download file...', 'info');
+                const wb = new ExcelJS.Workbook();
+                const ws = wb.addWorksheet(g_origSheetName);
+                const hdrRow = ws.getRow(1);
+                g_finalHeaders.forEach((h, idx) => { const cell = hdrRow.getCell(idx+1); cell.value = h; const s = g_finalHeaderStyles[idx]; if (s) { if (s.font) cell.font = s.font; if (s.fill) cell.fill = s.fill; if (s.border) cell.border = s.border; if (s.alignment) cell.alignment = s.alignment; } });
+                hdrRow.commit();
+                let currentRow = 2;
+                for (const entry of g_sortedRows) {
+                    if (entry.isDivider) {
+                        const divRow = ws.getRow(currentRow); divRow.height = 22;
+                        const dc = divRow.getCell(1); dc.value = 'Shoplot MRN'; dc.font = { bold: true, size: 12, color: { argb: 'FF1F1F1F' } }; dc.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFD700' } }; dc.alignment = { vertical: 'middle', horizontal: 'left' };
+                        for (let x = 2; x <= g_finalHeaders.length; x++) ws.getRow(currentRow).getCell(x).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFD700' } };
+                        divRow.commit(); currentRow++; continue;
+                    }
+                    const r = entry.rowData; const newRow = ws.getRow(currentRow);
+                    g_keepIndices.forEach((origIdx, finalIdx) => {
+                        const cell = newRow.getCell(finalIdx+1); const cellData = r.cells[origIdx];
+                        if (cellData.isComputed) {
+                            if (cellData.type === 'mrn_4') cell.value = { formula: `RIGHT(${g_finalMrnColLetter}${currentRow},4)` };
+                            else if (cellData.type === 'mrn_2') cell.value = { formula: `RIGHT(${g_finalMrnColLetter}${currentRow},2)` };
+                            else if (cellData.type === 'old_mrn_year') cell.value = { formula: `RIGHT(${g_finalOldMrnColLetter}${currentRow},4)` };
+                            cell.font = { name: 'Arial', size: 10 };
+                        } else {
+                            let val = cellData.value;
+                            if (val && typeof val === 'object' && val.formula) val = { formula: updateFormulaRow(val.formula, r.originalIndex, currentRow), result: val.result };
+                            cell.value = val;
+                            if (cellData.style.font) cell.font = cellData.style.font;
+                            if (cellData.style.fill) cell.fill = cellData.style.fill;
+                            if (cellData.style.border) cell.border = cellData.style.border;
+                            if (cellData.style.alignment) cell.alignment = cellData.style.alignment;
+                            if (cellData.style.numFmt) cell.numFmt = cellData.style.numFmt;
+                        }
+                    });
+                    newRow.commit(); currentRow++;
+                }
+                addLog('Auto-fitting columns...', 'info');
+                const colWidths = g_finalHeaders.map(h => String(h||'').length);
+                ws.eachRow({ includeEmpty: false }, (row) => { row.eachCell({ includeEmpty: false }, (cell, colNum) => { const idx = colNum-1; if (idx < 0 || idx >= colWidths.length) return; let v = cell.value, len = 0; if (v !== null && v !== undefined) { if (typeof v === 'object' && v.formula) len = String(v.result ?? '').length; else if (v instanceof Date) len = 12; else len = String(v).length; } if (len > colWidths[idx]) colWidths[idx] = len; }); });
+                colWidths.forEach((w, i) => { ws.getColumn(i+1).width = Math.min(Math.max(w+2,8),60); });
+                const buffer = await wb.xlsx.writeBuffer();
+                const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = processedFileName;
+                document.body.appendChild(a); a.click();
+                window.URL.revokeObjectURL(url); document.body.removeChild(a);
+                addLog('Download complete!', 'success');
+            });
+        });
+    </script>
+</body>
+</html>

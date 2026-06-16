@@ -1,0 +1,63 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Soft glow filter -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <!-- Outer glow for accent dots -->
+    <filter id="dotGlow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <!-- Gradient fills -->
+    <linearGradient id="shapeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c084fc" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#a8d8ea" stop-opacity="0.85"/>
+    </linearGradient>
+    <linearGradient id="innerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e1b29" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#12101e" stop-opacity="1"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Dark background for high contrast -->
+  <rect width="200" height="200" fill="#0d0b15" rx="36" ry="36"/>
+
+  <!-- Outer diamond / rhombus shape (rotated square) -->
+  <polygon points="100,20 170,100 100,180 30,100"
+           fill="url(#shapeGrad)"
+           filter="url(#glow)"
+           opacity="0.95"/>
+
+  <!-- Inner cutout diamond -->
+  <polygon points="100,46 148,100 100,154 52,100"
+           fill="url(#innerGrad)"/>
+
+  <!-- Thin center cross accent lines -->
+  <line x1="100" y1="72" x2="100" y2="128"
+        stroke="#c084fc" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/>
+  <line x1="72" y1="100" x2="128" y2="100"
+        stroke="#a8d8ea" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/>
+
+  <!-- Small center dot -->
+  <circle cx="100" cy="100" r="4"
+          fill="#ffffff" opacity="0.9" filter="url(#glow)"/>
+
+  <!-- Accent sparkle top-right (like the star in the reference) -->
+  <g filter="url(#dotGlow)">
+    <circle cx="155" cy="42" r="3" fill="#ffc3a0" opacity="0.95"/>
+    <line x1="155" y1="37" x2="155" y2="47" stroke="#ffc3a0" stroke-width="1" opacity="0.7"/>
+    <line x1="150" y1="42" x2="160" y2="42" stroke="#ffc3a0" stroke-width="1" opacity="0.7"/>
+  </g>
+
+  <!-- Accent dot bottom-left (subtle secondary) -->
+  <circle cx="48" cy="155" r="2.5"
+          fill="#a8d8ea" opacity="0.8" filter="url(#dotGlow)"/>
+</svg>
