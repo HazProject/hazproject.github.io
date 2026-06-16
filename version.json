@@ -1,0 +1,11 @@
+{
+  "latestVersion": "1.0.0",
+  "apkUrl": "https://renta-vert.vercel.app/renta.apk",
+  "required": true,
+  "changelog": [
+    "Configured Capacitor app to live-sync directly with Vercel deployment.",
+    "Implemented real-time SMTP support using Gmail credentials.",
+    "Added 24-hour auto-rejection for pending booking requests.",
+    "Fixed initials fallback for Google Sign-in avatar profile pictures."
+  ]
+}
