@@ -9,7 +9,6 @@ export default defineConfig({
       input: {
         main: './index.html',
       },
-      external: ['react-router-dom', 'pdfjs-dist/build/pdf.worker.entry']
     }
   },
   server: {

@@ -2,12 +2,14 @@ import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { GlassCard, Button, Dropzone, LogPanel, PreviewTable } from '../components/common'
 import { Upload, FileText, Download, CheckSquare, AlertCircle } from 'lucide-react'
 import * as pdfjs from 'pdfjs-dist'
-import * as pdfjsWorker from 'pdfjs-dist/build/pdf.worker.entry'
+import 'pdfjs-dist/build/pdf.worker.mjs'
 import { DocumentData, DetectionSettings, DEFAULT_DETECTION_SETTINGS, ProcessedPage } from '../types/docmarker'
 import './docMarker.css'
 
-// Configure PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.mjs',
+  import.meta.url
+).href
 
 export const DocMarker: React.FC = () => {
   const [isDragOver, setIsDragOver] = useState(false)
