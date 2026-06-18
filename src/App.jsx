@@ -76,7 +76,7 @@ const PROJECTS = [
   },
   {
     id: 'renta',
-    icon: '🎭',
+    iconImg: '/r3nta-icon.png',
     tag: 'App',
     title: 'R3nta',
     desc: 'A modern marketplace for renting and selling cosplay costumes with an intuitive browsing and booking experience.',

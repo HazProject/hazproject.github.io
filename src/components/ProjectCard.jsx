@@ -4,7 +4,13 @@ import './ProjectCard.css'
 export default function ProjectCard({ project }) {
   return (
     <a href={project.link} className="project-card" target="_blank" rel="noopener noreferrer">
-      <div className="project-icon">{project.icon}</div>
+      <div className="project-icon">
+        {project.iconImg ? (
+          <img src={project.iconImg} alt={project.title} className="project-icon-img" />
+        ) : (
+          project.icon
+        )}
+      </div>
       <div className="project-content">
         <div className="project-header">
           <span className="project-tag">{project.tag}</span>
