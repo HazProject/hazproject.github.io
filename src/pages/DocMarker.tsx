@@ -22,6 +22,7 @@ export const DocMarker: React.FC = () => {
   const [selectedPage, setSelectedPage] = useState<number>(0)
   const [progress, setProgress] = useState({ current: 0, total: 0, phase: '' })
   const [showOverlay, setShowOverlay] = useState(true)
+  const [rotation, setRotation] = useState(0)
   const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([])
   const overlayCanvasRefs = useRef<(HTMLCanvasElement | null)[]>([])
 
@@ -72,7 +73,7 @@ export const DocMarker: React.FC = () => {
         ctx.drawImage(img, 0, 0)
         const imageData = ctx.getImageData(0, 0, offscreen.width, offscreen.height)
 
-        const marks = await detectMarks(imageData, i, detectionSettings)
+        const marks = await detectMarks(imageData, i, detectionSettings, rotation)
         page.marks = marks
         addLog(`  Found ${marks.length} mark(s) on page ${i + 1}`, marks.length > 0 ? 'success' : 'info')
       }
@@ -206,6 +207,32 @@ export const DocMarker: React.FC = () => {
     const overlayCanvas = overlayCanvasRefs.current[selectedPage]
     if (overlayCanvas && showOverlay) renderOverlay(page, overlayCanvas)
   }, [documentData, selectedPage, renderPDFPage, renderOverlay, showOverlay])
+
+  useEffect(() => {
+    if (!documentData?.pages?.length) return
+
+    const reprocess = async () => {
+      for (let i = 0; i < documentData.pages.length; i++) {
+        const page = documentData.pages[i]
+        const img = await loadImage(page.imageData)
+        const offscreen = document.createElement('canvas')
+        offscreen.width = img.width
+        offscreen.height = img.height
+        const ctx = offscreen.getContext('2d')!
+        ctx.drawImage(img, 0, 0)
+        const imageData = ctx.getImageData(0, 0, offscreen.width, offscreen.height)
+        page.marks = await detectMarks(imageData, i, detectionSettings, rotation)
+      }
+
+      for (let i = 0; i < documentData.pages.length; i++) {
+        const page = documentData.pages[i]
+        page.rows = clusterRows(page.textBlocks, page.marks, i, detectionSettings.rowClusterTolerance)
+      }
+
+      setDocumentData(prev => prev ? { ...prev, pages: [...prev.pages] } : null)
+    }
+    reprocess()
+  }, [rotation])
 
   const handleExport = useCallback(async () => {
     if (!documentData) return
@@ -342,7 +369,7 @@ export const DocMarker: React.FC = () => {
 
                   <div className="document-viewer">
                     <div className="pdf-preview">
-                      <div className="canvas-wrapper">
+                      <div className="canvas-wrapper" style={{ transform: `rotate(${rotation}deg)`, transformOrigin: 'center center' }}>
                         <canvas ref={el => canvasRefs.current[selectedPage] = el} />
                         {showOverlay && (
                           <canvas
@@ -353,6 +380,20 @@ export const DocMarker: React.FC = () => {
                         )}
                       </div>
                       <div className="preview-controls">
+                        <button
+                          className="overlay-toggle"
+                          onClick={() => setRotation(r => (r - 90 + 360) % 360)}
+                          title="Rotate left"
+                        >
+                          ↺ 90°
+                        </button>
+                        <button
+                          className="overlay-toggle"
+                          onClick={() => setRotation(r => (r + 90) % 360)}
+                          title="Rotate right"
+                        >
+                          ↻ 90°
+                        </button>
                         <button
                           className={`overlay-toggle ${showOverlay ? 'active' : ''}`}
                           onClick={() => setShowOverlay(!showOverlay)}

@@ -81,9 +81,9 @@ export interface DetectionSettings {
 }
 
 export const DEFAULT_DETECTION_SETTINGS: DetectionSettings = {
-  confidenceThreshold: 0.6,
+  confidenceThreshold: 0.4,
   iouThreshold: 0.4,
-  minMarkSize: 18,
+  minMarkSize: 8,
   maxMarkSize: 80,
   rowClusterTolerance: 15,
   enableOCR: true,

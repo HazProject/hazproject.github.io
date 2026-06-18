@@ -3,32 +3,45 @@ import { DetectedMark, BoundingBox, DetectionSettings } from '../../types/docmar
 export async function detectMarks(
   imageData: ImageData,
   pageIndex: number,
-  settings: DetectionSettings
+  settings: DetectionSettings,
+  rotation: number = 0
 ): Promise<DetectedMark[]> {
   const { width, height, data } = imageData
-  const gray = toGrayscale(data)
-  const binary = otsuThreshold(gray, width, height)
-  const labels = connectedComponents(binary, width, height)
+  let processedData = data
+  let processedWidth = width
+  let processedHeight = height
 
-  const blobs = extractBlobs(labels, width, height)
+  if (rotation !== 0) {
+    const rotated = rotateImageData(data, width, height, rotation)
+    processedData = rotated.data
+    processedWidth = rotated.width
+    processedHeight = rotated.height
+  }
+
+  const gray = toGrayscale(processedData)
+
+  const binary = adaptiveThreshold(gray, processedWidth, processedHeight)
+  const labels = connectedComponents(binary, processedWidth, processedHeight)
+
+  const blobs = extractBlobs(labels, processedWidth, processedHeight)
   const marks: DetectedMark[] = []
 
   for (const blob of blobs) {
-    if (blob.pixelCount < 40) continue
-    if (blob.width < settings.minMarkSize || blob.height < settings.minMarkSize) continue
-    if (blob.width > settings.maxMarkSize * 3 || blob.height > settings.maxMarkSize * 3) continue
+    if (blob.pixelCount < 6) continue
+    if (blob.width < 3 || blob.height < 3) continue
+    if (blob.width > settings.maxMarkSize * 5 || blob.height > settings.maxMarkSize * 5) continue
 
     const aspectRatio = blob.width / blob.height
-    if (aspectRatio < 0.25 || aspectRatio > 4.0) continue
+    if (aspectRatio < 0.15 || aspectRatio > 6.0) continue
 
     const elongation = Math.max(blob.width, blob.height) / Math.max(1, Math.min(blob.width, blob.height))
-    if (elongation > 5) continue
+    if (elongation > 8) continue
 
-    const density = computeBlobDensity(binary, blob, width)
-    if (density < 0.08) continue
+    const density = computeBlobDensity(binary, blob, processedWidth)
+    if (density < 0.03) continue
 
-    const compactness = computeCompactness(blob, binary, width)
-    const innerDensity = computeInnerDensity(binary, blob, width)
+    const compactness = computeCompactness(blob, binary, processedWidth)
+    const innerDensity = computeInnerDensity(binary, blob, processedWidth)
 
     const type = classifyMark(density, innerDensity, compactness, aspectRatio, elongation, blob)
     if (type === 'unknown') continue
@@ -37,13 +50,22 @@ export async function detectMarks(
 
     if (confidence < settings.confidenceThreshold) continue
 
+    let bboxX = blob.x
+    let bboxY = blob.y
+    if (rotation !== 0) {
+      const orig = unrotatePoint(bboxX, bboxY, processedWidth, processedHeight, -rotation)
+      const orig2 = unrotatePoint(bboxX + blob.width, bboxY + blob.height, processedWidth, processedHeight, -rotation)
+      bboxX = Math.min(orig.x, orig2.x)
+      bboxY = Math.min(orig.y, orig2.y)
+    }
+
     marks.push({
       id: `mark-${pageIndex}-${marks.length}`,
-      bbox: { x: blob.x, y: blob.y, width: blob.width, height: blob.height },
+      bbox: { x: bboxX, y: bboxY, width: blob.width, height: blob.height },
       confidence,
       type,
       pageIndex,
-      isMarked: confidence > 0.65
+      isMarked: confidence > 0.55
     })
   }
 
@@ -59,6 +81,85 @@ function toGrayscale(data: Uint8ClampedArray): Uint8Array {
     gray[i] = Math.round(0.299 * r + 0.587 * g + 0.114 * b)
   }
   return gray
+}
+
+function adaptiveThreshold(gray: Uint8Array, width: number, height: number): Uint8Array {
+  const binary = new Uint8Array(gray.length)
+  const blockSize = 31
+  const C = 10
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      let sum = 0
+      let count = 0
+      const half = Math.floor(blockSize / 2)
+      for (let dy = -half; dy <= half; dy++) {
+        for (let dx = -half; dx <= half; dx++) {
+          const nx = x + dx
+          const ny = y + dy
+          if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+            sum += gray[ny * width + nx]
+            count++
+          }
+        }
+      }
+      const mean = sum / count
+      binary[y * width + x] = gray[y * width + x] < mean - C ? 1 : 0
+    }
+  }
+  return binary
+}
+
+function rotateImageData(
+  data: Uint8ClampedArray,
+  width: number,
+  height: number,
+  degrees: number
+): { data: Uint8ClampedArray; width: number; height: number } {
+  const rad = (degrees * Math.PI) / 180
+  const cos = Math.cos(rad)
+  const sin = Math.sin(rad)
+
+  const newW = Math.ceil(Math.abs(width * cos) + Math.abs(height * sin))
+  const newH = Math.ceil(Math.abs(width * sin) + Math.abs(height * cos))
+  const out = new Uint8ClampedArray(newW * newH * 4)
+
+  const cx = width / 2
+  const cy = height / 2
+  const ncx = newW / 2
+  const ncy = newH / 2
+
+  for (let ny = 0; ny < newH; ny++) {
+    for (let nx = 0; nx < newW; nx++) {
+      const dx = nx - ncx
+      const dy = ny - ncy
+      const srcX = Math.round(cx + dx * cos + dy * sin)
+      const srcY = Math.round(cy + -dx * sin + dy * cos)
+      if (srcX >= 0 && srcX < width && srcY >= 0 && srcY < height) {
+        const si = (srcY * width + srcX) * 4
+        const di = (ny * newW + nx) * 4
+        out[di] = data[si]
+        out[di + 1] = data[si + 1]
+        out[di + 2] = data[si + 2]
+        out[di + 3] = data[si + 3]
+      }
+    }
+  }
+  return { data: out, width: newW, height: newH }
+}
+
+function unrotatePoint(x: number, y: number, w: number, h: number, degrees: number): { x: number; y: number } {
+  const rad = (degrees * Math.PI) / 180
+  const cos = Math.cos(rad)
+  const sin = Math.sin(rad)
+  const cx = w / 2
+  const cy = h / 2
+  const dx = x - cx
+  const dy = y - cy
+  return {
+    x: Math.round(cx + dx * cos + dy * sin),
+    y: Math.round(cy + -dx * sin + dy * cos)
+  }
 }
 
 function otsuThreshold(gray: Uint8Array, width: number, height: number): Uint8Array {
@@ -230,23 +331,23 @@ function classifyMark(
   elongation: number,
   blob: Blob
 ): DetectedMark['type'] | 'unknown' {
-  const isCompact = compactness > 0.3
-  const isSquareish = aspectRatio > 0.6 && aspectRatio < 1.7
-  const isSmallish = blob.width < 50 && blob.height < 50
+  const isCompact = compactness > 0.15
+  const isSquareish = aspectRatio > 0.4 && aspectRatio < 2.5
+  const isSmallish = blob.width < 80 && blob.height < 80
 
-  if (isSquareish && isSmallish && density > 0.2 && density < 0.7 && innerDensity < 0.15 && compactness > 0.25) {
+  if (isSquareish && isSmallish && density > 0.1 && density < 0.8 && innerDensity < 0.25 && compactness > 0.15) {
     return 'checkbox'
   }
 
-  if (density > 0.08 && density < 0.45 && innerDensity > 0.03 && compactness > 0.2 && elongation < 3) {
+  if (density > 0.03 && density < 0.6 && innerDensity > 0.01 && compactness > 0.1 && elongation < 4) {
     return 'checkmark'
   }
 
-  if (density > 0.1 && density < 0.5 && innerDensity > 0.02 && isCompact && elongation < 2.5) {
+  if (density > 0.05 && density < 0.6 && innerDensity > 0.01 && isCompact && elongation < 3) {
     return 'xmark'
   }
 
-  if (isSquareish && density > 0.15 && density < 0.65 && compactness > 0.3) {
+  if (isSquareish && density > 0.1 && density < 0.75 && compactness > 0.2) {
     return 'circle'
   }
 
