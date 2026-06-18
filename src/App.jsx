@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import './index.css';
 import ProjectCard from './components/ProjectCard';
-const DocMarker = React.lazy(() => import('./pages/DocMarker').then(m => ({ default: m.DocMarker })));
+import { DocMarker } from './pages/DocMarker';
 
 class ErrorBoundary extends React.Component {
   state = { hasError: false, error: null }
@@ -288,7 +288,7 @@ export default function App() {
             </main>
           </div>
         } />
-        <Route path="/doc-marker" element={<ErrorBoundary><React.Suspense fallback={<div style={{color:'#fff',padding:'2rem',textAlign:'center'}}>Loading...</div>}><DocMarker /></React.Suspense></ErrorBoundary>} />
+        <Route path="/doc-marker" element={<ErrorBoundary><DocMarker /></ErrorBoundary>} />
       </Routes>
     </Router>
   );
