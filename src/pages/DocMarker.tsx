@@ -10,10 +10,7 @@ import { clusterRows } from '../lib/docmarker/clusterRows'
 import { exportToExcel, downloadBlob } from '../lib/docmarker/exportExcel'
 import './docMarker.css'
 
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.mjs',
-  import.meta.url
-).href
+pdfjs.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`
 
 export const DocMarker: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
