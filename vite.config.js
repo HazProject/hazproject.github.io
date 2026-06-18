@@ -8,7 +8,8 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: './index.html',
-      }
+      },
+      external: ['react-router-dom', 'pdfjs-dist/build/pdf.worker.entry']
     }
   },
   server: {

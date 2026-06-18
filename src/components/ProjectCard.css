@@ -1,0 +1,225 @@
+/* ── Project Card ── */
+.project-card {
+  display: block;
+  background: var(--bg-card);
+  backdrop-filter: blur(var(--blur-strength));
+  -webkit-backdrop-filter: blur(var(--blur-strength));
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  box-shadow: 0 8px 32px 0 rgba(0,0,0,0.4);
+  padding: 28px;
+  text-decoration: none;
+  color: var(--text-primary);
+  transition: all var(--transition-speed);
+  position: relative;
+  overflow: hidden;
+}
+
+.project-card:hover {
+  border-color: var(--accent-primary);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px 0 rgba(192, 132, 252, 0.2);
+}
+
+.project-icon {
+  font-size: 2.5rem;
+  margin-bottom: 16px;
+}
+
+.project-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.project-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.project-tag {
+  background: rgba(192, 132, 252, 0.1);
+  color: var(--accent-primary);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.project-title {
+  font-family: var(--font-heading);
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.project-desc {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.project-tech {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.tech-tag {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* ── Page Wrapper ── */
+.page-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+.site-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 48px;
+}
+
+.site-title {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #c084fc, #a8d8ea);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.section-heading {
+  font-family: var(--font-heading);
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, #c084fc, #a8d8ea);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.section-sub {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  margin-bottom: 40px;
+}
+
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 24px;
+}
+
+/* ── Logo Mark ── */
+.logo-mark {
+  width: 44px;
+  height: 44px;
+}
+
+/* ── Canvas FX Layers ── */
+.fx-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.fx-trail {
+  z-index: 2;
+}
+
+/* ── Cursor-tracked Background Gradient ── */
+.cursor-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+    600px circle at var(--cx, 50%) var(--cy, 40%),
+    rgba(192, 132, 252, 0.12) 0%,
+    rgba(168, 216, 234, 0.07) 40%,
+    transparent 70%
+  );
+  transition: background 0.05s linear;
+}
+
+/* ── Static animated orbs ── */
+.orb-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.3;
+}
+
+.orb-1 {
+  width: 45vw;
+  height: 45vw;
+  background: radial-gradient(circle, var(--accent-primary) 0%, transparent 70%);
+  top: -10%;
+  right: 5%;
+  animation: orb-float-1 14s infinite alternate ease-in-out;
+}
+
+.orb-2 {
+  width: 40vw;
+  height: 40vw;
+  background: radial-gradient(circle, var(--accent-secondary) 0%, transparent 70%);
+  bottom: -10%;
+  left: 5%;
+  animation: orb-float-2 12s infinite alternate ease-in-out;
+}
+
+.orb-3 {
+  width: 35vw;
+  height: 35vw;
+  background: radial-gradient(circle, var(--accent-gold) 0%, transparent 70%);
+  top: 50%;
+  right: 10%;
+  animation: orb-float-3 16s infinite alternate ease-in-out;
+}
+
+@keyframes orb-float-1 {
+  0% { transform: translate(0,0) scale(1); }
+  100% { transform: translate(-5vw, 20vh) scale(0.9); }
+}
+
+@keyframes orb-float-2 {
+  0% { transform: translate(0,0) scale(1); }
+  100% { transform: translate(5vw, -15vh) scale(1.1); }
+}
+
+@keyframes orb-float-3 {
+  0% { transform: translate(0,0) scale(1); }
+  100% { transform: translate(10vw, 5vh) scale(0.95); }
+}

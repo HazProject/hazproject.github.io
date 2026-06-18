@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import './index.css';
 import ProjectCard from './components/ProjectCard';
+import { DocMarker } from './pages/DocMarker';
 
 /* -------------------------------------------------------
    LOGO — inline SVG (always renders, no file deps)
@@ -42,7 +44,7 @@ const LogoMark = () => (
 );
 
 /* -------------------------------------------------------
-   PROJECTS DATA — add / remove projects here
+    PROJECTS DATA — add / remove projects here
 ------------------------------------------------------- */
 const PROJECTS = [
   {
@@ -53,6 +55,15 @@ const PROJECTS = [
     desc: 'Upload an Excel file to automatically sort and separate MRN records. Includes a sample Patient Register (Jan 2026). Shoplot MRN rows are moved to the bottom with a gold divider.',
     link: '/sorter/index.html',
     tech: ['ExcelJS', 'Firebase', 'Vanilla JS'],
+  },
+  {
+    id: 'doc-marker',
+    icon: '📄',
+    tag: 'Tool',
+    title: 'Document Mark Detector',
+    desc: 'Upload documents (PDF/images) to automatically detect marks/checkmarks and convert to Excel with intelligent sorting. Includes ML-based detection and manual review capabilities.',
+    link: '/doc-marker',
+    tech: ['React', 'TensorFlow.js', 'PDF.js', 'Tesseract.js', 'ExcelJS'],
   },
   {
     id: 'renta',
@@ -229,7 +240,7 @@ export default function App() {
   }, []);
 
   return (
-    <>
+    <Router>
       {/* Static animated orbs */}
       <div className="orb-container" aria-hidden="true">
         <div className="orb orb-1" />
@@ -246,25 +257,30 @@ export default function App() {
       {/* Cursor trail */}
       <canvas ref={trailRef} className="fx-canvas fx-trail" aria-hidden="true" />
 
-      <div className="page-wrapper">
-        {/* Header */}
-        <header className="site-header">
-          <LogoMark />
-          <span className="site-title">haz.</span>
-        </header>
+      <Routes>
+        <Route path="/" element={
+          <div className="page-wrapper">
+            {/* Header */}
+            <header className="site-header">
+              <LogoMark />
+              <span className="site-title">haz.</span>
+            </header>
 
-        {/* Projects section */}
-        <main>
-          <h1 className="section-heading">Projects</h1>
-          <p className="section-sub">A curated collection of things I've built.</p>
+            {/* Projects section */}
+            <main>
+              <h1 className="section-heading">Projects</h1>
+              <p className="section-sub">A curated collection of things I've built.</p>
 
-          <div className="project-grid">
-            {PROJECTS.map((project) => (
-              <ProjectCard key={project.id} project={project} />
-            ))}
+              <div className="project-grid">
+                {PROJECTS.map((project) => (
+                  <ProjectCard key={project.id} project={project} />
+                ))}
+              </div>
+            </main>
           </div>
-        </main>
-      </div>
-    </>
+        } />
+        <Route path="/doc-marker" element={<DocMarker />} />
+      </Routes>
+    </Router>
   );
 }
