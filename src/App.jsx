@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import './index.css';
 import ProjectCard from './components/ProjectCard';
-import { DocMarker } from './pages/DocMarker';
+const DocMarker = React.lazy(() => import('./pages/DocMarker').then(m => ({ default: m.DocMarker })));
 
 /* -------------------------------------------------------
    LOGO — inline SVG (always renders, no file deps)
@@ -279,7 +279,7 @@ export default function App() {
             </main>
           </div>
         } />
-        <Route path="/doc-marker" element={<DocMarker />} />
+        <Route path="/doc-marker" element={<React.Suspense fallback={<div style={{color:'#fff',padding:'2rem',textAlign:'center'}}>Loading...</div>}><DocMarker /></React.Suspense>} />
       </Routes>
     </Router>
   );
