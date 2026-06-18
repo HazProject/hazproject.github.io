@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import './index.css';
 import ProjectCard from './components/ProjectCard';
 const DocMarker = React.lazy(() => import('./pages/DocMarker').then(m => ({ default: m.DocMarker })));
