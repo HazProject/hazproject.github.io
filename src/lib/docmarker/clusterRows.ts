@@ -85,10 +85,10 @@ export function clusterRows(
         : 0
 
     const allBboxes = [...cells.map(c => c.bbox), ...rowMarks.map(m => m.bbox)]
-    const minY = Math.min(...allBboxes.map(b => b.y))
-    const minX = Math.min(...allBboxes.map(b => b.x))
-    const maxRight = Math.max(...allBboxes.map(b => b.x + b.width))
-    const maxY = Math.max(...allBboxes.map(b => b.y + b.height))
+    const minY = allBboxes.length > 0 ? Math.min(...allBboxes.map(b => b.y)) : avgY - maxHeight / 2
+    const minX = allBboxes.length > 0 ? Math.min(...allBboxes.map(b => b.x)) : 0
+    const maxRight = allBboxes.length > 0 ? Math.max(...allBboxes.map(b => b.x + b.width)) : 100
+    const maxY = allBboxes.length > 0 ? Math.max(...allBboxes.map(b => b.y + b.height)) : avgY + maxHeight / 2
 
     return {
       id: `row-${pageIndex}-${index}`,

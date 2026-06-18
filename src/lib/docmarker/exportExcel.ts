@@ -15,7 +15,7 @@ export async function exportToExcel(documentData: DocumentData): Promise<Blob> {
   const unmarkedRows = allRows.filter(r => !r.isMarked)
   const sortedRows = [...markedRows, ...unmarkedRows]
 
-  const maxCols = Math.max(...sortedRows.map(r => r.cells.length), 1)
+  const maxCols = Math.max(...sortedRows.map(r => (r.cells || []).length), 1)
 
   const sheet = workbook.addWorksheet('Document Data', {
     views: [{ state: 'frozen', ySplit: 1 }]
@@ -55,7 +55,7 @@ export async function exportToExcel(documentData: DocumentData): Promise<Blob> {
       row.pageIndex + 1,
       row.isMarked ? 'YES' : 'NO',
       `${(row.confidence * 100).toFixed(1)}%`,
-      ...row.cells.map(c => c.text)
+      ...(row.cells || []).map(c => c.text)
     ]
 
     const excelRow = sheet.addRow(rowData)
@@ -74,7 +74,7 @@ export async function exportToExcel(documentData: DocumentData): Promise<Blob> {
 
   for (let col = 1; col <= maxCols + 4; col++) {
     const maxLen = sortedRows.reduce((max, row) => {
-      const cellText = row.cells[col - 5]?.text || ''
+      const cellText = (row.cells || [])[col - 5]?.text || ''
       const headerText = ['', '', '', '', ...Array.from({ length: maxCols }, (_, i) => `Col ${i + 1}`)][col - 1]
       return Math.max(max, cellText.length, headerText?.length || 0)
     }, 10)
