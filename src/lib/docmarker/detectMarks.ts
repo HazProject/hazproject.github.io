@@ -52,7 +52,7 @@ function toGrayscale(data: Uint8ClampedArray): Uint8Array {
 }
 
 function otsuThreshold(gray: Uint8Array, width: number, height: number): Uint8Array {
-  const histogram = new Uint64Array(256)
+  const histogram = new Uint32Array(256)
   for (let i = 0; i < gray.length; i++) histogram[gray[i]]++
 
   const total = width * height
