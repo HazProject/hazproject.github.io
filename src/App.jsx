@@ -4,6 +4,15 @@ import './index.css';
 import ProjectCard from './components/ProjectCard';
 const DocMarker = React.lazy(() => import('./pages/DocMarker').then(m => ({ default: m.DocMarker })));
 
+class ErrorBoundary extends React.Component {
+  state = { hasError: false, error: null }
+  static getDerivedStateFromError(error) { return { hasError: true, error } }
+  render() {
+    if (this.state.hasError) return <div style={{color:'#ff6b6b',padding:'2rem',textAlign:'center'}}><h2>Something went wrong</h2><p>{this.state.error?.message}</p><a href="/#/" style={{color:'#c084fc'}}>Back to Home</a></div>
+    return this.props.children
+  }
+}
+
 /* -------------------------------------------------------
    LOGO — inline SVG (always renders, no file deps)
 ------------------------------------------------------- */
@@ -279,7 +288,7 @@ export default function App() {
             </main>
           </div>
         } />
-        <Route path="/doc-marker" element={<React.Suspense fallback={<div style={{color:'#fff',padding:'2rem',textAlign:'center'}}>Loading...</div>}><DocMarker /></React.Suspense>} />
+        <Route path="/doc-marker" element={<ErrorBoundary><React.Suspense fallback={<div style={{color:'#fff',padding:'2rem',textAlign:'center'}}>Loading...</div>}><DocMarker /></React.Suspense></ErrorBoundary>} />
       </Routes>
     </Router>
   );
