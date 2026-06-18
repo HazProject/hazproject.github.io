@@ -84,25 +84,32 @@ function toGrayscale(data: Uint8ClampedArray): Uint8Array {
 }
 
 function adaptiveThreshold(gray: Uint8Array, width: number, height: number): Uint8Array {
+  const integral = new Float64Array(width * height)
+  for (let y = 0; y < height; y++) {
+    let rowSum = 0
+    for (let x = 0; x < width; x++) {
+      rowSum += gray[y * width + x]
+      integral[y * width + x] = rowSum + (y > 0 ? integral[(y - 1) * width + x] : 0)
+    }
+  }
+
   const binary = new Uint8Array(gray.length)
-  const blockSize = 31
-  const C = 10
+  const half = 15
+  const C = 8
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
-      let sum = 0
-      let count = 0
-      const half = Math.floor(blockSize / 2)
-      for (let dy = -half; dy <= half; dy++) {
-        for (let dx = -half; dx <= half; dx++) {
-          const nx = x + dx
-          const ny = y + dy
-          if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-            sum += gray[ny * width + nx]
-            count++
-          }
-        }
-      }
+      const x1 = Math.max(0, x - half)
+      const y1 = Math.max(0, y - half)
+      const x2 = Math.min(width - 1, x + half)
+      const y2 = Math.min(height - 1, y + half)
+      const count = (x2 - x1 + 1) * (y2 - y1 + 1)
+
+      let sum = integral[y2 * width + x2]
+      if (x1 > 0) sum -= integral[y2 * width + (x1 - 1)]
+      if (y1 > 0) sum -= integral[(y1 - 1) * width + x2]
+      if (x1 > 0 && y1 > 0) sum += integral[(y1 - 1) * width + (x1 - 1)]
+
       const mean = sum / count
       binary[y * width + x] = gray[y * width + x] < mean - C ? 1 : 0
     }
