@@ -869,19 +869,21 @@
                                 else groupBRows.push(rowData);
                             }
 
-                            function dedupeByMrn(rows) {
+                            function dedupeGroup(name, rows) {
                                 const seen = new Set();
-                                return rows.filter(r => {
+                                const before = rows.length;
+                                const deduped = rows.filter(r => {
                                     const key = String(r.mrnVal).trim().toLowerCase();
                                     if (!key || seen.has(key)) return false;
                                     seen.add(key);
                                     return true;
                                 });
+                                rows.splice(0, rows.length, ...deduped);
+                                if (before !== rows.length) addLog(`${name}: removed ${before - rows.length} duplicate MRN rows (kept first)`, 'info');
                             }
-                            const dedupeLog = (name, before, after) => { if (before !== after) addLog(`${name}: removed ${before - after} duplicate MRN rows (kept first)`, 'info'); };
-                            let beforeA = groupARows.length; groupARows = dedupeByMrn(groupARows); dedupeLog('Group A', beforeA, groupARows.length);
-                            let beforeB = groupBRows.length; groupBRows = dedupeByMrn(groupBRows); dedupeLog('Group B', beforeB, groupBRows.length);
-                            let beforeS = shoplotRows.length; shoplotRows = dedupeByMrn(shoplotRows); dedupeLog('Shoplot', beforeS, shoplotRows.length);
+                            dedupeGroup('Group A', groupARows);
+                            dedupeGroup('Group B', groupBRows);
+                            dedupeGroup('Shoplot', shoplotRows);
 
                             addLog(`Sorting Group A (${groupARows.length} rows)...`, 'info');
                             groupARows.sort((a, b) => { const m2a = String(a.mrnVal).slice(-2), m2b = String(b.mrnVal).slice(-2); if (m2a !== m2b) return m2a < m2b ? -1 : 1; const m4a = String(a.mrnVal).slice(-4), m4b = String(b.mrnVal).slice(-4); if (m4a !== m4b) return m4a < m4b ? -1 : 1; return String(a.mrnVal) < String(b.mrnVal) ? -1 : 1; });
