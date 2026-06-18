@@ -879,6 +879,9 @@
                             addLog(`Sorting Group B (${groupBRows.length} rows)...`, 'info');
                             groupBRows.sort((a, b) => { const ya = String(a.oldMrnYear||9999).padStart(4,'0'), yb = String(b.oldMrnYear||9999).padStart(4,'0'); if (ya !== yb) return ya < yb ? -1 : 1; return String(a.oldMrnStr||'') < String(b.oldMrnStr||'') ? -1 : 1; });
 
+                            addLog(`Sorting Shoplot rows (${shoplotRows.length} rows)...`, 'info');
+                            shoplotRows.sort((a, b) => { const m2a = String(a.mrnVal).slice(-2), m2b = String(b.mrnVal).slice(-2); if (m2a !== m2b) return m2a < m2b ? -1 : 1; const m4a = String(a.mrnVal).slice(-4), m4b = String(b.mrnVal).slice(-4); if (m4a !== m4b) return m4a < m4b ? -1 : 1; return String(a.mrnVal) < String(b.mrnVal) ? -1 : 1; });
+
                             const newSheet = workbook.addWorksheet('temp_sorted_data');
                             const newHeaderRow = newSheet.getRow(1);
                             g_finalHeaders.forEach((h, idx) => { const cell = newHeaderRow.getCell(idx+1); cell.value = h; const s = g_finalHeaderStyles[idx]; if (s) { if (s.font) cell.font = s.font; if (s.fill) cell.fill = s.fill; if (s.border) cell.border = s.border; if (s.alignment) cell.alignment = s.alignment; } });
