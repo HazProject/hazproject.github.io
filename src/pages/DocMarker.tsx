@@ -416,7 +416,7 @@ export const DocMarker: React.FC = () => {
                         value={detectionSettings.confidenceThreshold}
                         onChange={(e) => setDetectionSettings(prev => ({
                           ...prev,
-                          confidenceThreshold: parseFloat(e.target.value) || 0.5
+                          confidenceThreshold: parseFloat(e.target.value) || 0.6
                         }))}
                         min="0" max="1" step="0.1"
                       />

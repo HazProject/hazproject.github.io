@@ -14,16 +14,26 @@ export async function detectMarks(
   const marks: DetectedMark[] = []
 
   for (const blob of blobs) {
-    const area = blob.width * blob.height
-    if (area < settings.minMarkSize * settings.minMarkSize) continue
-    if (area > settings.maxMarkSize * settings.maxMarkSize * 4) continue
+    if (blob.pixelCount < 40) continue
+    if (blob.width < settings.minMarkSize || blob.height < settings.minMarkSize) continue
+    if (blob.width > settings.maxMarkSize * 3 || blob.height > settings.maxMarkSize * 3) continue
 
     const aspectRatio = blob.width / blob.height
-    if (aspectRatio < 0.3 || aspectRatio > 3.0) continue
+    if (aspectRatio < 0.25 || aspectRatio > 4.0) continue
+
+    const elongation = Math.max(blob.width, blob.height) / Math.max(1, Math.min(blob.width, blob.height))
+    if (elongation > 5) continue
 
     const density = computeBlobDensity(binary, blob, width)
-    const type = classifyMark(density, aspectRatio, blob, binary, width)
-    const confidence = estimateConfidence(density, type)
+    if (density < 0.08) continue
+
+    const compactness = computeCompactness(blob, binary, width)
+    const innerDensity = computeInnerDensity(binary, blob, width)
+
+    const type = classifyMark(density, innerDensity, compactness, aspectRatio, elongation, blob)
+    if (type === 'unknown') continue
+
+    const confidence = estimateConfidence(density, innerDensity, compactness, type, blob)
 
     if (confidence < settings.confidenceThreshold) continue
 
@@ -33,7 +43,7 @@ export async function detectMarks(
       confidence,
       type,
       pageIndex,
-      isMarked: confidence > 0.6
+      isMarked: confidence > 0.65
     })
   }
 
@@ -163,7 +173,7 @@ function extractBlobs(labels: Int32Array, width: number, height: number): Blob[]
   return blobs
 }
 
-function computeBlobDensity(binary: Uint8Array, blob: BinaryBlob, imgWidth: number): number {
+function computeBlobDensity(binary: Uint8Array, blob: Blob, imgWidth: number): number {
   let filled = 0
   const total = blob.width * blob.height
   for (let y = blob.y; y < blob.y + blob.height; y++) {
@@ -174,34 +184,32 @@ function computeBlobDensity(binary: Uint8Array, blob: BinaryBlob, imgWidth: numb
   return filled / total
 }
 
-interface BinaryBlob extends Blob {}
+function computeCompactness(blob: Blob, binary: Uint8Array, imgWidth: number): number {
+  let perimeter = 0
+  const fillRatio = blob.pixelCount / (blob.width * blob.height)
 
-function classifyMark(
-  density: number,
-  aspectRatio: number,
-  blob: Blob,
-  binary: Uint8Array,
-  imgWidth: number
-): DetectedMark['type'] {
-  const innerDensity = computeInnerDensity(binary, blob, imgWidth)
+  for (let y = blob.y; y < blob.y + blob.height; y++) {
+    for (let x = blob.x; x < blob.x + blob.width; x++) {
+      if (binary[y * imgWidth + x] !== 1) continue
+      let isEdge = false
+      for (const [dx, dy] of [[-1,0],[1,0],[0,-1],[0,1]]) {
+        const nx = x + dx, ny = y + dy
+        if (nx < blob.x || nx >= blob.x + blob.width || ny < blob.y || ny >= blob.y + blob.height) {
+          isEdge = true; break
+        }
+        if (binary[ny * imgWidth + nx] === 0) { isEdge = true; break }
+      }
+      if (isEdge) perimeter++
+    }
+  }
 
-  if (density > 0.15 && density < 0.45 && innerDensity < 0.05 && aspectRatio > 0.7 && aspectRatio < 1.4) {
-    return 'checkbox'
-  }
-  if (density > 0.05 && density < 0.3 && innerDensity > 0.02) {
-    return 'checkmark'
-  }
-  if (density > 0.08 && density < 0.35) {
-    return 'xmark'
-  }
-  if (density > 0.1 && aspectRatio > 0.7 && aspectRatio < 1.3) {
-    return 'circle'
-  }
-  return 'unknown'
+  const area = Math.max(1, blob.pixelCount)
+  const rawCompactness = (perimeter * perimeter) / area
+  return fillRatio * Math.min(1, 10 / Math.max(1, rawCompactness))
 }
 
 function computeInnerDensity(binary: Uint8Array, blob: Blob, imgWidth: number): number {
-  const margin = Math.max(2, Math.floor(Math.min(blob.width, blob.height) * 0.2))
+  const margin = Math.max(3, Math.floor(Math.min(blob.width, blob.height) * 0.25))
   let filled = 0
   let total = 0
 
@@ -214,13 +222,61 @@ function computeInnerDensity(binary: Uint8Array, blob: Blob, imgWidth: number): 
   return total > 0 ? filled / total : 0
 }
 
-function estimateConfidence(density: number, type: DetectedMark['type']): number {
-  let base = 0.5
-  if (type === 'checkmark' && density > 0.08 && density < 0.25) base = 0.8
-  else if (type === 'xmark' && density > 0.1 && density < 0.3) base = 0.75
-  else if (type === 'checkbox' && density > 0.15 && density < 0.45) base = 0.85
-  else if (type === 'circle' && density > 0.1) base = 0.7
-  else if (type === 'unknown') base = 0.4
+function classifyMark(
+  density: number,
+  innerDensity: number,
+  compactness: number,
+  aspectRatio: number,
+  elongation: number,
+  blob: Blob
+): DetectedMark['type'] | 'unknown' {
+  const isCompact = compactness > 0.3
+  const isSquareish = aspectRatio > 0.6 && aspectRatio < 1.7
+  const isSmallish = blob.width < 50 && blob.height < 50
 
-  return Math.min(0.99, base + density * 0.3)
+  if (isSquareish && isSmallish && density > 0.2 && density < 0.7 && innerDensity < 0.15 && compactness > 0.25) {
+    return 'checkbox'
+  }
+
+  if (density > 0.08 && density < 0.45 && innerDensity > 0.03 && compactness > 0.2 && elongation < 3) {
+    return 'checkmark'
+  }
+
+  if (density > 0.1 && density < 0.5 && innerDensity > 0.02 && isCompact && elongation < 2.5) {
+    return 'xmark'
+  }
+
+  if (isSquareish && density > 0.15 && density < 0.65 && compactness > 0.3) {
+    return 'circle'
+  }
+
+  return 'unknown'
+}
+
+function estimateConfidence(
+  density: number,
+  innerDensity: number,
+  compactness: number,
+  type: DetectedMark['type'],
+  blob: Blob
+): number {
+  let base = 0.5
+  const sizeBonus = Math.min(0.15, (blob.width * blob.height) / 2000)
+
+  switch (type) {
+    case 'checkbox':
+      base = 0.7 + innerDensity * 0.5
+      break
+    case 'checkmark':
+      base = 0.65 + compactness * 0.3
+      break
+    case 'xmark':
+      base = 0.6 + compactness * 0.3
+      break
+    case 'circle':
+      base = 0.6 + compactness * 0.25
+      break
+  }
+
+  return Math.min(0.95, base + sizeBonus)
 }
