@@ -62,7 +62,7 @@ const PROJECTS = [
     tag: 'Tool',
     title: 'Document Mark Detector',
     desc: 'Upload documents (PDF/images) to automatically detect marks/checkmarks and convert to Excel with intelligent sorting. Includes ML-based detection and manual review capabilities.',
-    link: '/doc-marker',
+    link: '/#/doc-marker',
     tech: ['React', 'TensorFlow.js', 'PDF.js', 'Tesseract.js', 'ExcelJS'],
   },
   {
