@@ -3,7 +3,7 @@ import { GlassCard, Button, Dropzone, LogPanel, PreviewTable } from '../componen
 import { Upload, FileText, Download, CheckSquare, AlertCircle, Eye } from 'lucide-react'
 import * as pdfjs from 'pdfjs-dist'
 import { DocumentData, DetectionSettings, DEFAULT_DETECTION_SETTINGS, ProcessedPage, DetectedMark } from '../types/docmarker'
-import { loadPdfFile, loadImageFile } from '../lib/docmarker/processFile'
+import { loadPdfFile, loadImageFile, loadImage } from '../lib/docmarker/processFile'
 import { detectMarks } from '../lib/docmarker/detectMarks'
 import { ocrPage } from '../lib/docmarker/ocr'
 import { clusterRows } from '../lib/docmarker/clusterRows'
