@@ -76,10 +76,10 @@ const PROJECTS = [
   },
   {
     id: 'renta',
-    icon: '🏠',
+    icon: '🎭',
     tag: 'App',
     title: 'R3nta',
-    desc: 'A modern rental marketplace for listing, browsing, and booking properties with an intuitive user experience.',
+    desc: 'A modern marketplace for renting and selling cosplay costumes with an intuitive browsing and booking experience.',
     link: 'https://r3nta.ddns.net/',
     tech: ['React', 'Firebase'],
   },
