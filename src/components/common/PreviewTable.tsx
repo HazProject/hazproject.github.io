@@ -23,18 +23,22 @@ export const PreviewTable: React.FC<PreviewTableProps> = ({
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, rowIndex) => (
-            <tr key={rowIndex} className={row.isMarked ? 'separated-row' : ''}>              
-              {row.cells.map((cell: any, cellIndex: number) => (
-                <td key={cellIndex}>{cell}</td>
-              ))}
-              {row.isMarked !== undefined && (
-                <td>
-                  <span className="badge-separated">Marked</span>
-                </td>
-              )}
-            </tr>
-          ))}
+          {rows.map((row, rowIndex) => {
+            const cells = Array.isArray(row) ? row : (row.cells || [])
+            const isMarked = Array.isArray(row) ? false : row.isMarked
+            return (
+              <tr key={rowIndex} className={isMarked ? 'separated-row' : ''}>              
+                {cells.map((cell: any, cellIndex: number) => (
+                  <td key={cellIndex}>{cell}</td>
+                ))}
+                {isMarked && (
+                  <td>
+                    <span className="badge-separated">Marked</span>
+                  </td>
+                )}
+              </tr>
+            )
+          })}
         </tbody>
       </table>
     </div>

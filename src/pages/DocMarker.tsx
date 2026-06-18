@@ -396,7 +396,7 @@ export const DocMarker: React.FC = () => {
                             String(row.pageIndex + 1),
                             row.isMarked ? 'YES' : 'NO',
                             `${(row.confidence * 100).toFixed(0)}%`,
-                            row.cells.map(c => c.text).join(' | ')
+                            (row.cells || []).map(c => c.text).join(' | ')
                           ])
                         })()
                       }
