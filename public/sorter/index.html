@@ -802,8 +802,6 @@
                                 const srcCell = origHeaderRow.getCell(c);
                                 const style = { font: srcCell.font ? JSON.parse(JSON.stringify(srcCell.font)) : undefined, fill: srcCell.fill ? JSON.parse(JSON.stringify(srcCell.fill)) : undefined, border: srcCell.border ? JSON.parse(JSON.stringify(srcCell.border)) : undefined, alignment: srcCell.alignment ? JSON.parse(JSON.stringify(srcCell.alignment)) : undefined };
                                 newHeaders.push(headers[c-1]); newHeaderStyles.push(style);
-                                if (c === mrnIdx) { newHeaders.push('MRN (4 Digits)'); newHeaderStyles.push(JSON.parse(JSON.stringify(style))); newHeaders.push('MRN (2 Digits)'); newHeaderStyles.push(JSON.parse(JSON.stringify(style))); }
-                                if (c === oldMrnIdx) { newHeaders.push('OLD MRN Year'); newHeaderStyles.push(JSON.parse(JSON.stringify(style))); }
                             }
 
                             const excludedHeadersUpper = ['DATE','START TIME','DURATION','WALK-IN APPOINTMENT TIME','DR. CODE','MEDICAL DEPARTMENT ID','MEDICAL DEPARTMENT','ADMISSION STATUS','INSERT DATE','INSERT USER','REFERENCE','APPOINTMENT NOTE'];
@@ -864,8 +862,6 @@
                                 for (let c = 1; c <= sheet.columnCount; c++) {
                                     const cell = row.getCell(c);
                                     rowData.cells.push({ isComputed: false, value: cell.value, style: { font: cell.font ? JSON.parse(JSON.stringify(cell.font)) : undefined, fill: cell.fill ? JSON.parse(JSON.stringify(cell.fill)) : undefined, border: cell.border ? JSON.parse(JSON.stringify(cell.border)) : undefined, alignment: cell.alignment ? JSON.parse(JSON.stringify(cell.alignment)) : undefined, numFmt: cell.numFmt || undefined } });
-                                    if (c === mrnIdx) { rowData.cells.push({ isComputed: true, type: 'mrn_4' }); rowData.cells.push({ isComputed: true, type: 'mrn_2' }); }
-                                    if (c === oldMrnIdx) rowData.cells.push({ isComputed: true, type: 'old_mrn_year' });
                                 }
 
                                 if (isShoplot) { shoplotRows.push(rowData); movedCount++; addLog(`Row ${r} (MRN: ${mrnStr}) → Shoplot (bottom)`, 'warn'); }
