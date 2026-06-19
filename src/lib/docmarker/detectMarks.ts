@@ -20,22 +20,22 @@ export async function detectMarks(
 
   const gray = toGrayscale(processedData)
 
-  const binary = adaptiveThreshold(gray, processedWidth, processedHeight)
+  const binary = otsuThreshold(gray, processedWidth, processedHeight)
   const labels = connectedComponents(binary, processedWidth, processedHeight)
 
   const blobs = extractBlobs(labels, processedWidth, processedHeight)
   const marks: DetectedMark[] = []
 
   for (const blob of blobs) {
-    if (blob.pixelCount < 6) continue
-    if (blob.width < 3 || blob.height < 3) continue
+    if (blob.pixelCount < 25) continue
+    if (blob.width < 8 || blob.height < 8) continue
     if (blob.width > settings.maxMarkSize * 5 || blob.height > settings.maxMarkSize * 5) continue
 
     const aspectRatio = blob.width / blob.height
-    if (aspectRatio < 0.15 || aspectRatio > 6.0) continue
+    if (aspectRatio < 0.2 || aspectRatio > 5.0) continue
 
     const elongation = Math.max(blob.width, blob.height) / Math.max(1, Math.min(blob.width, blob.height))
-    if (elongation > 8) continue
+    if (elongation > 6) continue
 
     const density = computeBlobDensity(binary, blob, processedWidth)
     if (density < 0.03) continue
