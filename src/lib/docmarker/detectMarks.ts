@@ -27,34 +27,24 @@ export async function detectMarks(
   const marks: DetectedMark[] = []
 
   for (const blob of blobs) {
-    if (blob.pixelCount < 20) continue
-    if (blob.width < 8 || blob.height < 8) continue
-    if (blob.width > settings.maxMarkSize * 5 || blob.height > settings.maxMarkSize * 5) continue
-
-    const elongation = Math.max(blob.width, blob.height) / Math.max(1, Math.min(blob.width, blob.height))
+    // 1. Strict size filter: checkmarks are small slashes
+    if (blob.pixelCount < 15 || blob.pixelCount > 300) continue
+    if (blob.width < 5 || blob.height < 5) continue
     
-    // Checkmarks are ~20-60 degrees, and elongated like a slash
+    // 2. Strict elongation: must be line-like (not compact like text)
+    const elongation = Math.max(blob.width, blob.height) / Math.max(1, Math.min(blob.width, blob.height))
+    if (elongation < 2.0 || elongation > 8) continue // 2.0-8.0 is a good slash shape
+    
+    // 3. Strict angle filter: must be diagonal
     const degAngle = Math.abs((blob.angle || 0) * 180 / Math.PI)
     const normAngle = degAngle > 90 ? 180 - degAngle : degAngle
-    
-    // Checkmark/Slash: Allow wider angle range (5-85°) to catch all slashes
-    if (elongation < 1.5 || elongation > 10.0 || normAngle < 5 || normAngle > 85) continue
+    if (normAngle < 20 || normAngle > 70) continue // 20°-70° diagonal slashes only
 
-
-    const density = computeBlobDensity(binary, blob, processedWidth)
-    if (density < 0.05 || density > 0.4) continue // Slashes are thin
-
-
+    // 4. Compactness: reject circular/complex text blobs
     const compactness = computeCompactness(blob, binary, processedWidth)
-    const innerDensity = computeInnerDensity(binary, blob, processedWidth)
-
-    const type = classifyMark(density, innerDensity, compactness, elongation, blob)
-    if (type === 'unknown') continue
-
-    const confidence = estimateConfidence(density, innerDensity, compactness, type, blob)
-
-    if (confidence < settings.confidenceThreshold) continue
-
+    if (compactness > 0.3) continue // Slashes are not compact
+    
+    // Passed all strict filters
     let bboxX = blob.x
     let bboxY = blob.y
     if (rotation !== 0) {
@@ -67,10 +57,10 @@ export async function detectMarks(
     marks.push({
       id: `mark-${pageIndex}-${marks.length}`,
       bbox: { x: bboxX, y: bboxY, width: blob.width, height: blob.height },
-      confidence,
-      type,
+      confidence: 0.95,
+      type: 'checkmark',
       pageIndex,
-      isMarked: confidence > 0.55
+      isMarked: true
     })
   }
 
