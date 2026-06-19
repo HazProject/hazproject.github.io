@@ -911,7 +911,7 @@
                                 rowsList.forEach(rowData => {
                                     const newRow = newSheet.getRow(currentRowNum);
                                     g_keepIndices.forEach((origIndex, finalColIndex) => {
-                                        const cellData = rowData.cells[origIndex];
+                                        const cellData = rowData.cells[origIndex] || { isComputed: false, value: '', style: {} };
                                         const cell = newRow.getCell(finalColIndex+1);
                                         if (cellData.isComputed) {
                                             if (cellData.type === 'mrn_4') cell.value = { formula: `RIGHT(${g_finalMrnColLetter}${currentRow},4)` };
@@ -1011,7 +1011,8 @@
                             const text = r.mrnVal ? r.mrnVal.replace(/\D/g, '').slice(-4).padStart(4, '0') : '';
                             return `<td>${text}</td>`;
                         }
-                        const c = r.cells[origIdx]; let text = c.value;
+                        const c = r.cells[origIdx] || { value: '' };
+                        let text = c.value;
                         if (c.isComputed) { if (c.type === 'mrn_4') text = r.mrnVal ? r.mrnVal.slice(-4) : ''; else if (c.type === 'mrn_2') text = r.mrnVal ? r.mrnVal.slice(-2) : ''; else if (c.type === 'old_mrn_year') text = r.oldMrnYear || ''; }
                         else if (text && typeof text === 'object') text = text.formula ? `=${text.formula}` : (text.result ?? '');
                         return `<td>${text === null || text === undefined ? '' : String(text).substring(0,80)}</td>`;
@@ -1046,7 +1047,7 @@
                         }
                     const r = entry.rowData; const newRow = ws.getRow(currentRow);
                                     g_keepIndices.forEach((origIdx, finalIdx) => {
-                                        const cell = newRow.getCell(finalIdx+1); const cellData = r.cells[origIdx];
+                                        const cell = newRow.getCell(finalIdx+1);                                         const cellData = r.cells[origIdx] || { isComputed: false, value: '', style: {} };
                                         if (cellData.isComputed) {
                                             if (cellData.type === 'mrn_4') cell.value = { formula: `RIGHT(${g_finalMrnColLetter}${currentRow},4)` };
                                             else if (cellData.type === 'mrn_2') cell.value = { formula: `RIGHT(${g_finalMrnColLetter}${currentRow},2)` };
