@@ -907,17 +907,25 @@
                                         const cellData = rowData.cells[origIndex];
                                         const cell = newRow.getCell(finalColIndex+1);
                                         if (cellData.isComputed) {
-                                            if (cellData.type === 'mrn_4') cell.value = { formula: `RIGHT(${g_finalMrnColLetter}${currentRowNum},4)` };
-                                            else if (cellData.type === 'mrn_2') cell.value = { formula: `RIGHT(${g_finalMrnColLetter}${currentRowNum},2)` };
-                                            else if (cellData.type === 'old_mrn_year') cell.value = { formula: `RIGHT(${g_finalOldMrnColLetter}${currentRowNum},4)` };
+                                            if (cellData.type === 'mrn_4') cell.value = { formula: `RIGHT(${g_finalMrnColLetter}${currentRow},4)` };
+                                            else if (cellData.type === 'mrn_2') cell.value = { formula: `RIGHT(${g_finalMrnColLetter}${currentRow},2)` };
+                                            else if (cellData.type === 'old_mrn_year') cell.value = { formula: `RIGHT(${g_finalOldMrnColLetter}${currentRow},4)` };
                                             cell.font = { name: 'Arial', size: 10 };
                                         } else {
                                             let val = cellData.value;
-                                            if (val && typeof val === 'object' && val.formula) val = { formula: updateFormulaRow(val.formula, rowData.originalIndex, currentRowNum), result: val.result };
+                                            // Apply 4-digit MRN constraint
+                                            if (getColLetter(finalColIndex + 1) === g_finalMrnColLetter && val) {
+                                                val = String(val).replace(/\D/g, '').slice(-4).padStart(4, '0');
+                                            }
+                                            
+                                            if (val && typeof val === 'object' && val.formula) val = { formula: updateFormulaRow(val.formula, rowData.originalIndex, currentRow), result: val.result };
                                             cell.value = val;
+                                            
+                                            // Apply borders
+                                            cell.border = cellData.style.border || { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+                                            
                                             if (cellData.style.font) cell.font = cellData.style.font;
                                             if (cellData.style.fill) cell.fill = cellData.style.fill;
-                                            if (cellData.style.border) cell.border = cellData.style.border;
                                             if (cellData.style.alignment) cell.alignment = cellData.style.alignment;
                                             if (cellData.style.numFmt) cell.numFmt = cellData.style.numFmt;
                                         }
@@ -935,12 +943,18 @@
                                 addLog('Inserting Shoplot divider...', 'info');
                                 const dividerRow = newSheet.getRow(currentRowNum);
                                 dividerRow.height = 22;
+                                // Apply borders for divider
                                 const divCell = dividerRow.getCell(1);
                                 divCell.value = 'Shoplot MRN';
                                 divCell.font = { bold: true, size: 12, color: { argb: 'FF1F1F1F' } };
                                 divCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFD700' } };
                                 divCell.alignment = { vertical: 'middle', horizontal: 'left' };
-                                for (let dc = 2; dc <= g_finalHeaders.length; dc++) { newSheet.getRow(currentRowNum).getCell(dc).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFD700' } }; }
+                                divCell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+                                for (let x = 2; x <= g_finalHeaders.length; x++) {
+                                    const c = newSheet.getRow(currentRowNum).getCell(x);
+                                    c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFD700' } };
+                                    c.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+                                }
                                 dividerRow.commit(); currentRowNum++;
                             }
 
@@ -989,10 +1003,15 @@
                     if (entry.isDivider) return `<tr style="background:rgba(255,215,0,0.12);"><td colspan="${g_finalHeaders.length+2}" style="padding:8px 14px;font-weight:700;color:#FFD700;font-size:0.85rem;">⭐ SHOPLOT MRN</td></tr>`;
                     const r = entry.rowData; r.newIndex = rowNum++;
                     const statusBadge = r.isSeparated ? '<span class="badge-separated">Separated</span>' : '<span class="badge-normal">Normal</span>';
-                    const cellsHtml = g_keepIndices.map(origIdx => {
+                    const cellsHtml = g_keepIndices.map((origIdx, finalIdx) => {
                         const c = r.cells[origIdx]; let text = c.value;
                         if (c.isComputed) { if (c.type === 'mrn_4') text = r.mrnVal ? r.mrnVal.slice(-4) : ''; else if (c.type === 'mrn_2') text = r.mrnVal ? r.mrnVal.slice(-2) : ''; else if (c.type === 'old_mrn_year') text = r.oldMrnYear || ''; }
-                        else if (text && typeof text === 'object') text = text.formula ? `=${text.formula}` : (text.result ?? '');
+                        else {
+                            if (getColLetter(finalIdx + 1) === g_finalMrnColLetter && text) {
+                                text = String(text).replace(/\D/g, '').slice(-4).padStart(4, '0');
+                            }
+                            if (text && typeof text === 'object') text = text.formula ? `=${text.formula}` : (text.result ?? '');
+                        }
                         return `<td>${text === null || text === undefined ? '' : String(text).substring(0,80)}</td>`;
                     }).join('');
                     return `<tr class="${r.isSeparated ? 'separated-row' : ''}"><td style="font-weight:bold;color:var(--text-muted);">${r.newIndex}</td><td>${statusBadge}</td>${cellsHtml}</tr>`;
@@ -1009,31 +1028,47 @@
                 hdrRow.commit();
                 let currentRow = 2;
                 for (const entry of g_sortedRows) {
-                    if (entry.isDivider) {
-                        const divRow = ws.getRow(currentRow); divRow.height = 22;
-                        const dc = divRow.getCell(1); dc.value = 'Shoplot MRN'; dc.font = { bold: true, size: 12, color: { argb: 'FF1F1F1F' } }; dc.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFD700' } }; dc.alignment = { vertical: 'middle', horizontal: 'left' };
-                        for (let x = 2; x <= g_finalHeaders.length; x++) ws.getRow(currentRow).getCell(x).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFD700' } };
-                        divRow.commit(); currentRow++; continue;
-                    }
-                    const r = entry.rowData; const newRow = ws.getRow(currentRow);
-                    g_keepIndices.forEach((origIdx, finalIdx) => {
-                        const cell = newRow.getCell(finalIdx+1); const cellData = r.cells[origIdx];
-                        if (cellData.isComputed) {
-                            if (cellData.type === 'mrn_4') cell.value = { formula: `RIGHT(${g_finalMrnColLetter}${currentRow},4)` };
-                            else if (cellData.type === 'mrn_2') cell.value = { formula: `RIGHT(${g_finalMrnColLetter}${currentRow},2)` };
-                            else if (cellData.type === 'old_mrn_year') cell.value = { formula: `RIGHT(${g_finalOldMrnColLetter}${currentRow},4)` };
-                            cell.font = { name: 'Arial', size: 10 };
-                        } else {
-                            let val = cellData.value;
-                            if (val && typeof val === 'object' && val.formula) val = { formula: updateFormulaRow(val.formula, r.originalIndex, currentRow), result: val.result };
-                            cell.value = val;
-                            if (cellData.style.font) cell.font = cellData.style.font;
-                            if (cellData.style.fill) cell.fill = cellData.style.fill;
-                            if (cellData.style.border) cell.border = cellData.style.border;
-                            if (cellData.style.alignment) cell.alignment = cellData.style.alignment;
-                            if (cellData.style.numFmt) cell.numFmt = cellData.style.numFmt;
+                        if (entry.isDivider) {
+                            const divRow = ws.getRow(currentRow); divRow.height = 22;
+                            const dc = divRow.getCell(1); dc.value = 'Shoplot MRN'; 
+                            dc.font = { bold: true, size: 12, color: { argb: 'FF1F1F1F' } }; 
+                            dc.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFD700' } }; 
+                            dc.alignment = { vertical: 'middle', horizontal: 'left' };
+                            dc.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+                            for (let x = 2; x <= g_finalHeaders.length; x++) {
+                                const c = ws.getRow(currentRow).getCell(x);
+                                c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFD700' } };
+                                c.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+                            }
+                            divRow.commit(); currentRow++; continue;
                         }
-                    });
+                    const r = entry.rowData; const newRow = ws.getRow(currentRow);
+                                    g_keepIndices.forEach((origIdx, finalIdx) => {
+                                        const cell = newRow.getCell(finalIdx+1); const cellData = r.cells[origIdx];
+                                        if (cellData.isComputed) {
+                                            if (cellData.type === 'mrn_4') cell.value = { formula: `RIGHT(${g_finalMrnColLetter}${currentRow},4)` };
+                                            else if (cellData.type === 'mrn_2') cell.value = { formula: `RIGHT(${g_finalMrnColLetter}${currentRow},2)` };
+                                            else if (cellData.type === 'old_mrn_year') cell.value = { formula: `RIGHT(${g_finalOldMrnColLetter}${currentRow},4)` };
+                                            cell.font = { name: 'Arial', size: 10 };
+                                        } else {
+                                            let val = cellData.value;
+                                            // Apply 4-digit MRN constraint
+                                            if (getColLetter(finalIdx + 1) === g_finalMrnColLetter && val) {
+                                                val = String(val).replace(/\D/g, '').slice(-4).padStart(4, '0');
+                                            }
+                                            
+                                            if (val && typeof val === 'object' && val.formula) val = { formula: updateFormulaRow(val.formula, r.originalIndex, currentRow), result: val.result };
+                                            cell.value = val;
+                                            
+                                            // Apply borders
+                                            cell.border = cellData.style.border || { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+                                            
+                                            if (cellData.style.font) cell.font = cellData.style.font;
+                                            if (cellData.style.fill) cell.fill = cellData.style.fill;
+                                            if (cellData.style.alignment) cell.alignment = cellData.style.alignment;
+                                            if (cellData.style.numFmt) cell.numFmt = cellData.style.numFmt;
+                                        }
+                                    });
                     newRow.commit(); currentRow++;
                 }
                 addLog('Auto-fitting columns...', 'info');
