@@ -27,23 +27,24 @@ export async function detectMarks(
   const marks: DetectedMark[] = []
 
   for (const blob of blobs) {
-    if (blob.pixelCount < 25) continue
+    if (blob.pixelCount < 20) continue
     if (blob.width < 8 || blob.height < 8) continue
     if (blob.width > settings.maxMarkSize * 5 || blob.height > settings.maxMarkSize * 5) continue
-
-    const aspectRatio = blob.width / blob.height
-    if (aspectRatio < 0.2 || aspectRatio > 5.0) continue
 
     const elongation = Math.max(blob.width, blob.height) / Math.max(1, Math.min(blob.width, blob.height))
     if (elongation > 6) continue
 
+    const degAngle = Math.abs((blob.angle || 0) * 180 / Math.PI)
+    const normAngle = degAngle > 90 ? 180 - degAngle : degAngle
+    if (normAngle < 10 || normAngle > 80) continue
+
     const density = computeBlobDensity(binary, blob, processedWidth)
-    if (density < 0.03) continue
+    if (density < 0.05) continue
 
     const compactness = computeCompactness(blob, binary, processedWidth)
     const innerDensity = computeInnerDensity(binary, blob, processedWidth)
 
-    const type = classifyMark(density, innerDensity, compactness, aspectRatio, elongation, blob)
+    const type = classifyMark(density, innerDensity, compactness, elongation, blob)
     if (type === 'unknown') continue
 
     const confidence = estimateConfidence(density, innerDensity, compactness, type, blob)
@@ -208,6 +209,7 @@ interface Blob {
   width: number
   height: number
   pixelCount: number
+  angle?: number
 }
 
 function connectedComponents(binary: Uint8Array, width: number, height: number): Int32Array {
@@ -270,15 +272,39 @@ function extractBlobs(labels: Int32Array, width: number, height: number): Blob[]
 
   const blobs: Blob[] = []
   for (const [, b] of blobMap) {
+    const angle = computeBlobAngle(labels, b.minX, b.minY, b.maxX, b.maxY, width)
     blobs.push({
       x: b.minX,
       y: b.minY,
       width: b.maxX - b.minX + 1,
       height: b.maxY - b.minY + 1,
-      pixelCount: b.count
+      pixelCount: b.count,
+      angle
     })
   }
   return blobs
+}
+
+function computeBlobAngle(labels: Int32Array, minX: number, minY: number, maxX: number, maxY: number, imgWidth: number): number {
+  let sumXX = 0, sumYY = 0, sumXY = 0
+  let count = 0
+  const cx = (minX + maxX) / 2
+  const cy = (minY + maxY) / 2
+
+  for (let y = minY; y <= maxY; y++) {
+    for (let x = minX; x <= maxX; x++) {
+      if (labels[y * imgWidth + x] === 0) continue
+      const dx = x - cx
+      const dy = y - cy
+      sumXX += dx * dx
+      sumYY += dy * dy
+      sumXY += dx * dy
+      count++
+    }
+  }
+
+  if (count === 0) return 0
+  return 0.5 * Math.atan2(2 * sumXY, sumXX - sumYY)
 }
 
 function computeBlobDensity(binary: Uint8Array, blob: Blob, imgWidth: number): number {
@@ -334,27 +360,26 @@ function classifyMark(
   density: number,
   innerDensity: number,
   compactness: number,
-  aspectRatio: number,
   elongation: number,
   blob: Blob
 ): DetectedMark['type'] | 'unknown' {
-  const isCompact = compactness > 0.15
-  const isSquareish = aspectRatio > 0.4 && aspectRatio < 2.5
   const isSmallish = blob.width < 80 && blob.height < 80
+  const degAngle = Math.abs((blob.angle || 0) * 180 / Math.PI)
+  const normAngle = degAngle > 90 ? 180 - degAngle : degAngle
 
-  if (isSquareish && isSmallish && density > 0.1 && density < 0.8 && innerDensity < 0.25 && compactness > 0.15) {
+  if (isSmallish && density > 0.1 && density < 0.8 && innerDensity < 0.25 && compactness > 0.15) {
     return 'checkbox'
   }
 
-  if (density > 0.03 && density < 0.6 && innerDensity > 0.01 && compactness > 0.1 && elongation < 4) {
+  if (elongation >= 1.5 && normAngle >= 15 && normAngle <= 75 && density > 0.05 && density < 0.6 && compactness > 0.1) {
     return 'checkmark'
   }
 
-  if (density > 0.05 && density < 0.6 && innerDensity > 0.01 && isCompact && elongation < 3) {
+  if (density > 0.05 && density < 0.6 && innerDensity > 0.01 && compactness > 0.1 && elongation < 3) {
     return 'xmark'
   }
 
-  if (isSquareish && density > 0.1 && density < 0.75 && compactness > 0.2) {
+  if (density > 0.1 && density < 0.75 && compactness > 0.2) {
     return 'circle'
   }
 
