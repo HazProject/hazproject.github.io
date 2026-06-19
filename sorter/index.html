@@ -809,6 +809,13 @@
                             newHeaders.forEach((h, idx) => {
                                 if (!excludedHeadersUpper.includes(String(h || '').trim().toUpperCase())) {
                                     g_keepIndices.push(idx); g_finalHeaders.push(h); g_finalHeaderStyles.push(newHeaderStyles[idx]);
+                                    
+                                    // If this is the MRN column, insert our new 4-digit column
+                                    if (String(h || '').trim().toUpperCase() === 'MRN') {
+                                        g_keepIndices.push(-1); // -1 indicates a computed column
+                                        g_finalHeaders.push('MRN (Last 4)');
+                                        g_finalHeaderStyles.push(newHeaderStyles[idx]); // Copy style
+                                    }
                                 }
                             });
 
@@ -913,10 +920,6 @@
                                             cell.font = { name: 'Arial', size: 10 };
                                         } else {
                                             let val = cellData.value;
-                                            // Apply 4-digit MRN constraint
-                                            if (getColLetter(finalColIndex + 1) === g_finalMrnColLetter && val) {
-                                                val = String(val).replace(/\D/g, '').slice(-4).padStart(4, '0');
-                                            }
                                             
                                             if (val && typeof val === 'object' && val.formula) val = { formula: updateFormulaRow(val.formula, rowData.originalIndex, currentRow), result: val.result };
                                             cell.value = val;
@@ -1004,14 +1007,13 @@
                     const r = entry.rowData; r.newIndex = rowNum++;
                     const statusBadge = r.isSeparated ? '<span class="badge-separated">Separated</span>' : '<span class="badge-normal">Normal</span>';
                     const cellsHtml = g_keepIndices.map((origIdx, finalIdx) => {
+                        if (origIdx === -1) {
+                            const text = r.mrnVal ? r.mrnVal.replace(/\D/g, '').slice(-4).padStart(4, '0') : '';
+                            return `<td>${text}</td>`;
+                        }
                         const c = r.cells[origIdx]; let text = c.value;
                         if (c.isComputed) { if (c.type === 'mrn_4') text = r.mrnVal ? r.mrnVal.slice(-4) : ''; else if (c.type === 'mrn_2') text = r.mrnVal ? r.mrnVal.slice(-2) : ''; else if (c.type === 'old_mrn_year') text = r.oldMrnYear || ''; }
-                        else {
-                            if (getColLetter(finalIdx + 1) === g_finalMrnColLetter && text) {
-                                text = String(text).replace(/\D/g, '').slice(-4).padStart(4, '0');
-                            }
-                            if (text && typeof text === 'object') text = text.formula ? `=${text.formula}` : (text.result ?? '');
-                        }
+                        else if (text && typeof text === 'object') text = text.formula ? `=${text.formula}` : (text.result ?? '');
                         return `<td>${text === null || text === undefined ? '' : String(text).substring(0,80)}</td>`;
                     }).join('');
                     return `<tr class="${r.isSeparated ? 'separated-row' : ''}"><td style="font-weight:bold;color:var(--text-muted);">${r.newIndex}</td><td>${statusBadge}</td>${cellsHtml}</tr>`;
@@ -1052,10 +1054,6 @@
                                             cell.font = { name: 'Arial', size: 10 };
                                         } else {
                                             let val = cellData.value;
-                                            // Apply 4-digit MRN constraint
-                                            if (getColLetter(finalIdx + 1) === g_finalMrnColLetter && val) {
-                                                val = String(val).replace(/\D/g, '').slice(-4).padStart(4, '0');
-                                            }
                                             
                                             if (val && typeof val === 'object' && val.formula) val = { formula: updateFormulaRow(val.formula, r.originalIndex, currentRow), result: val.result };
                                             cell.value = val;
