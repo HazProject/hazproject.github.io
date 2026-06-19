@@ -911,8 +911,16 @@
                                 rowsList.forEach(rowData => {
                                     const newRow = newSheet.getRow(currentRowNum);
                                     g_keepIndices.forEach((origIndex, finalColIndex) => {
-                                        const cellData = rowData.cells[origIndex] || { isComputed: false, value: '', style: {} };
                                         const cell = newRow.getCell(finalColIndex+1);
+                                        
+                                        // Handle our new computed 4-digit MRN column
+                                        if (origIndex === -1) {
+                                            cell.value = rowData.mrnVal ? rowData.mrnVal.replace(/\D/g, '').slice(-4).padStart(4, '0') : '';
+                                            cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+                                            return;
+                                        }
+
+                                        const cellData = rowData.cells[origIndex] || { isComputed: false, value: '', style: {} };
                                         if (cellData.isComputed) {
                                             if (cellData.type === 'mrn_4') cell.value = { formula: `RIGHT(${g_finalMrnColLetter}${currentRow},4)` };
                                             else if (cellData.type === 'mrn_2') cell.value = { formula: `RIGHT(${g_finalMrnColLetter}${currentRow},2)` };
