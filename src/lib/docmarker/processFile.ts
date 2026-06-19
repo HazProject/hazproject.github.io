@@ -31,7 +31,7 @@ export async function loadPdfFile(file: File): Promise<ProcessedPage[]> {
 
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i)
-    const scale = 2.0
+    const scale = 3.0 // Increased for better OCR/detection
     const viewport = page.getViewport({ scale })
 
     const canvas = document.createElement('canvas')

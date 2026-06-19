@@ -33,6 +33,14 @@ export function clusterRows(
 
   if (items.length === 0) return []
 
+  // If no text, just cluster by Y
+  if (textBlocks.length === 0) {
+      // Logic to cluster marks only by Y
+      items.sort((a, b) => a.yCenter - b.yCenter)
+      // ... (existing clustering logic already handles this!)
+  }
+
+
   items.sort((a, b) => a.yCenter - b.yCenter)
 
   const clusters: Array<typeof items> = []

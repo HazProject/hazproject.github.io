@@ -33,13 +33,13 @@ export async function detectMarks(
 
     const elongation = Math.max(blob.width, blob.height) / Math.max(1, Math.min(blob.width, blob.height))
     
-    // NEW: Strictly filter for elongated diagonal lines (checkmarks)
-    // Marks are ~20-60 degrees, and elongated like a slash
+    // Checkmarks are ~20-60 degrees, and elongated like a slash
     const degAngle = Math.abs((blob.angle || 0) * 180 / Math.PI)
     const normAngle = degAngle > 90 ? 180 - degAngle : degAngle
     
-    // Checkmark/Slash: diagonal angle (20-70°) AND elongated (2.0 - 8.0)
-    if (elongation < 2.0 || elongation > 8.0 || normAngle < 20 || normAngle > 70) continue
+    // Checkmark/Slash: Allow wider angle range (5-85°) to catch all slashes
+    if (elongation < 1.5 || elongation > 10.0 || normAngle < 5 || normAngle > 85) continue
+
 
     const density = computeBlobDensity(binary, blob, processedWidth)
     if (density < 0.05 || density > 0.4) continue // Slashes are thin
