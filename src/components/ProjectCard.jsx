@@ -3,7 +3,7 @@ import './ProjectCard.css'
 
 export default function ProjectCard({ project }) {
   return (
-    <a href={project.link} className="project-card" target="_blank" rel="noopener noreferrer">
+    <a href={project.link} className="project-card">
       <div className="project-icon">
         {project.iconImg ? (
           <img src={project.iconImg} alt={project.title} className="project-icon-img" />
