@@ -59,26 +59,26 @@ export default function Consumptioness() {
         <div className="cp-icon">⚡</div>
         <h1 className="cp-title">Consumptioness</h1>
         <p className="cp-subtitle">PC Power Consumption Calculator<br />for Malaysia</p>
-        <div className="cp-version-badge">v0.0.1</div>
+        <div className="cp-version-badge">v0.0.2</div>
       </header>
-
+ 
       <div className="cp-download-section">
         <h2>Download</h2>
         <p className="cp-download-desc">Choose the version that suits you:</p>
         <div className="cp-download-grid">
-          <a href="https://github.com/HazProject/Consumptioness/releases/download/v0.0.1/Consumptioness-v0.0.1-win64.zip"
+          <a href="https://github.com/HazProject/Consumptioness/releases/download/v0.0.2/Consumptioness-v0.0.2-win64.zip"
              className="cp-download-card" target="_blank" rel="noopener noreferrer">
             <span className="cp-dl-icon">🪟</span>
             <span className="cp-dl-title">C# Native (Recommended)</span>
-            <span className="cp-dl-desc">~82 MB · Windows 10/11 · Self-contained</span>
-            <span className="cp-dl-badge">Best hardware detection</span>
+            <span className="cp-dl-desc">~82 MB · Windows 10/11 · Standalone</span>
+            <span className="cp-dl-badge">Best Hardware Access</span>
           </a>
-          <a href="https://github.com/HazProject/Consumptioness/releases/tag/v0.0.1"
+          <a href="https://github.com/HazProject/Consumptioness/releases/download/v0.0.2/Consumptioness-Setup-0.0.2.exe"
              className="cp-download-card" target="_blank" rel="noopener noreferrer">
             <span className="cp-dl-icon">🌐</span>
-            <span className="cp-dl-title">Electron (Source)</span>
-            <span className="cp-dl-desc">Build from source · Cross-platform</span>
-            <span className="cp-dl-badge">View release page</span>
+            <span className="cp-dl-title">Electron Installer</span>
+            <span className="cp-dl-desc">~80 MB · Windows 10/11 · Installer Setup</span>
+            <span className="cp-dl-badge">Cross-Platform UI</span>
           </a>
         </div>
         <a href="https://github.com/HazProject/Consumptioness" className="cp-github-link" target="_blank" rel="noopener noreferrer">
