@@ -3,6 +3,7 @@ import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-d
 import './index.css';
 import ProjectCard from './components/ProjectCard';
 import { DocMarker } from './pages/DocMarker';
+import Consumptioness from './pages/Consumptioness';
 
 class ErrorBoundary extends React.Component {
   state = { hasError: false, error: null }
@@ -82,6 +83,15 @@ const PROJECTS = [
     desc: 'A modern marketplace for renting and selling cosplay costumes with an intuitive browsing and booking experience.',
     link: 'https://r3nta.ddns.net/',
     tech: ['React', 'Firebase'],
+  },
+  {
+    id: 'consumptioness',
+    icon: '⚡',
+    tag: 'Desktop',
+    title: 'Consumptioness',
+    desc: 'Desktop app that auto-detects your PC hardware and calculates real-time power consumption with TNB Malaysia tariff rates in RM. Export to PDF/Excel. Two versions available.',
+    link: '/#/consumptioness',
+    tech: ['C# WPF', 'Electron', 'React', 'systeminformation', 'TNB Malaysia'],
   },
   // ← Add more projects here
 ];
@@ -289,6 +299,7 @@ export default function App() {
           </div>
         } />
         <Route path="/doc-marker" element={<ErrorBoundary><DocMarker /></ErrorBoundary>} />
+        <Route path="/consumptioness" element={<Consumptioness />} />
       </Routes>
     </Router>
   );
