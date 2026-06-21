@@ -4,6 +4,7 @@ import './index.css';
 import ProjectCard from './components/ProjectCard';
 import { DocMarker } from './pages/DocMarker';
 import Consumptioness from './pages/Consumptioness';
+import { AdBanner } from './components/AdBanner';
 
 class ErrorBoundary extends React.Component {
   state = { hasError: false, error: null }
@@ -295,6 +296,9 @@ export default function App() {
                   <ProjectCard key={project.id} project={project} />
                 ))}
               </div>
+
+              {/* Clean, non-intrusive Ad banner */}
+              <AdBanner format="horizontal" style={{ maxWidth: '800px', margin: '40px auto 0 auto' }} />
             </main>
           </div>
         } />
