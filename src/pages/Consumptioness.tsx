@@ -6,7 +6,7 @@ const FEATURES = [
   {
     icon: '🖥️',
     title: 'Auto Hardware Detection',
-    desc: 'Detects your CPU, GPU, RAM, and storage via WMI (Windows) or systeminformation (Electron). No manual input — just click "Scan". 500+ CPU & 300+ GPU TDP values included.',
+    desc: 'Detects your CPU, GPU, RAM, and storage via WMI and LibreHardwareMonitor. No manual input — just click "Scan". 500+ CPU & 300+ GPU TDP values included.',
   },
   {
     icon: '⚡',
@@ -61,24 +61,17 @@ export default function Consumptioness() {
         <p className="cp-subtitle">PC Power Consumption Calculator<br />for Malaysia</p>
         <div className="cp-version-badge">v0.0.2</div>
       </header>
- 
+
       <div className="cp-download-section">
         <h2>Download</h2>
-        <p className="cp-download-desc">Choose the version that suits you:</p>
+        <p className="cp-download-desc">Get the latest Windows build:</p>
         <div className="cp-download-grid">
           <a href="https://github.com/HazProject/Consumptioness/releases/download/v0.0.2/Consumptioness-v0.0.2-win64.zip"
              className="cp-download-card" target="_blank" rel="noopener noreferrer">
             <span className="cp-dl-icon">🪟</span>
             <span className="cp-dl-title">C# Native (Recommended)</span>
-            <span className="cp-dl-desc">~82 MB · Windows 10/11 · Standalone</span>
+            <span className="cp-dl-desc">~114 MB · Windows 10/11 · Standalone</span>
             <span className="cp-dl-badge">Best Hardware Access</span>
-          </a>
-          <a href="https://github.com/HazProject/Consumptioness/releases/download/v0.0.2/Consumptioness-Setup-0.0.2.exe"
-             className="cp-download-card" target="_blank" rel="noopener noreferrer">
-            <span className="cp-dl-icon">🌐</span>
-            <span className="cp-dl-title">Electron Installer</span>
-            <span className="cp-dl-desc">~80 MB · Windows 10/11 · Installer Setup</span>
-            <span className="cp-dl-badge">Cross-Platform UI</span>
           </a>
         </div>
         <a href="https://github.com/HazProject/Consumptioness" className="cp-github-link" target="_blank" rel="noopener noreferrer">
@@ -115,7 +108,7 @@ export default function Consumptioness() {
         <h2>System Requirements</h2>
         <div className="cp-reqs">
           <div className="cp-req-item">🪟 Windows 10 or 11 (64-bit)</div>
-          <div className="cp-req-item">💾 100MB disk space (C#) / 500MB (Electron)</div>
+          <div className="cp-req-item">💾 250MB disk space</div>
           <div className="cp-req-item">🌐 Internet connection for updates only</div>
         </div>
       </section>
@@ -157,17 +150,14 @@ export default function Consumptioness() {
         <h2>Tech Stack</h2>
         <div className="cp-tech-stack">
           <span className="cp-tech-tag">C# WPF (.NET 8)</span>
-          <span className="cp-tech-tag">Electron + React</span>
-          <span className="cp-tech-tag">systeminformation</span>
+          <span className="cp-tech-tag">LibreHardwareMonitor</span>
           <span className="cp-tech-tag">WMI / Performance Counters</span>
           <span className="cp-tech-tag">QuestPDF / ClosedXML</span>
-          <span className="cp-tech-tag">jsPDF / ExcelJS</span>
-          <span className="cp-tech-tag">electron-updater</span>
         </div>
       </section>
 
       <footer className="cp-footer">
-        <p>Version 0.0.1 &middot; MIT License &middot; Made by <a href="https://github.com/HazProject" target="_blank" rel="noopener noreferrer">Haz</a></p>
+        <p>Version 0.0.2 &middot; MIT License &middot; Made by <a href="https://github.com/HazProject" target="_blank" rel="noopener noreferrer">Haz</a></p>
       </footer>
     </div>
   );

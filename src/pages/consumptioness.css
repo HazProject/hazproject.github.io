@@ -83,7 +83,8 @@
 
 .cp-download-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 320px);
+  justify-content: center;
   gap: 1rem;
   margin-bottom: 1rem;
 }
