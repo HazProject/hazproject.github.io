@@ -95,6 +95,15 @@ const PROJECTS = [
     link: '/#/consumptioness',
     tech: ['C# WPF', 'Electron', 'React', 'systeminformation', 'TNB Malaysia'],
   },
+  {
+    id: 'haz-backup',
+    iconImg: '/hazbackup-icon.png',
+    tag: 'Desktop',
+    title: 'HazBackup',
+    desc: 'Native high-performance desktop backup & restore app styled with a premium dark theme. Encrypts, deduplicates, and backs up your files (with presets for save games and developer configurations) locally and to the cloud via the integrated Restic engine.',
+    link: 'https://github.com/HazProject/HazBackup',
+    tech: ['C# WPF', 'Restic', 'XAML', 'AES-256'],
+  },
   // ← Add more projects here
 ];
 
