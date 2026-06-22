@@ -4,6 +4,7 @@ import './index.css';
 import ProjectCard from './components/ProjectCard';
 import { DocMarker } from './pages/DocMarker';
 import Consumptioness from './pages/Consumptioness';
+import Live2DCustomizer from './pages/Live2DCustomizer';
 import { AdBanner } from './components/AdBanner';
 
 class ErrorBoundary extends React.Component {
@@ -304,6 +305,7 @@ export default function App() {
         } />
         <Route path="/doc-marker" element={<ErrorBoundary><DocMarker /></ErrorBoundary>} />
         <Route path="/consumptioness" element={<Consumptioness />} />
+        <Route path="/live2d-customizer" element={<ErrorBoundary><Live2DCustomizer /></ErrorBoundary>} />
       </Routes>
     </Router>
   );
