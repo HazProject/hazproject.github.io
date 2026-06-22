@@ -5,6 +5,7 @@ import ProjectCard from './components/ProjectCard';
 import { DocMarker } from './pages/DocMarker';
 import Consumptioness from './pages/Consumptioness';
 import Live2DCustomizer from './pages/Live2DCustomizer';
+import HazBackup from './pages/HazBackup';
 import { AdBanner } from './components/AdBanner';
 
 class ErrorBoundary extends React.Component {
@@ -101,7 +102,7 @@ const PROJECTS = [
     tag: 'Desktop',
     title: 'HazBackup',
     desc: 'Native high-performance desktop backup & restore app styled with a premium dark theme. Encrypts, deduplicates, and backs up your files (with presets for save games and developer configurations) locally and to the cloud via the integrated Restic engine.',
-    link: 'https://github.com/HazProject/HazBackup',
+    link: '/#/haz-backup',
     tech: ['C# WPF', 'Restic', 'XAML', 'AES-256'],
   },
   // ← Add more projects here
@@ -314,6 +315,7 @@ export default function App() {
         } />
         <Route path="/doc-marker" element={<ErrorBoundary><DocMarker /></ErrorBoundary>} />
         <Route path="/consumptioness" element={<Consumptioness />} />
+        <Route path="/haz-backup" element={<HazBackup />} />
         <Route path="/live2d-customizer" element={<ErrorBoundary><Live2DCustomizer /></ErrorBoundary>} />
       </Routes>
     </Router>
