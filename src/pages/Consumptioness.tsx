@@ -59,14 +59,14 @@ export default function Consumptioness() {
         <div className="cp-icon">⚡</div>
         <h1 className="cp-title">Consumptioness</h1>
         <p className="cp-subtitle">PC Power Consumption Calculator<br />for Malaysia</p>
-        <div className="cp-version-badge">v0.0.2</div>
+        <div className="cp-version-badge">v0.0.3</div>
       </header>
 
       <div className="cp-download-section">
         <h2>Download</h2>
         <p className="cp-download-desc">Get the latest Windows build:</p>
         <div className="cp-download-grid">
-          <a href="https://github.com/HazProject/Consumptioness/releases/download/v0.0.2/Consumptioness-v0.0.2-win64.zip"
+          <a href="https://github.com/HazProject/Consumptioness/releases/download/v0.0.3/Consumptioness-v0.0.3-win64.zip"
              className="cp-download-card" target="_blank" rel="noopener noreferrer">
             <span className="cp-dl-icon">🪟</span>
             <span className="cp-dl-title">C# Native (Recommended)</span>
@@ -157,7 +157,7 @@ export default function Consumptioness() {
       </section>
 
       <footer className="cp-footer">
-        <p>Version 0.0.2 &middot; MIT License &middot; Made by <a href="https://github.com/HazProject" target="_blank" rel="noopener noreferrer">Haz</a></p>
+        <p>Version 0.0.3 &middot; MIT License &middot; Made by <a href="https://github.com/HazProject" target="_blank" rel="noopener noreferrer">Haz</a></p>
       </footer>
     </div>
   );
