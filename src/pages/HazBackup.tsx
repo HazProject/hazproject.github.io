@@ -63,17 +63,16 @@ export default function HazBackup() {
 
       <div className="cp-download-section">
         <h2>Download</h2>
-        <p className="cp-download-desc">Get the latest Windows build:</p>
+        <p className="cp-download-desc">Windows build coming soon:</p>
         <div className="cp-download-grid">
-          <a href="https://github.com/HazProject/HazBackup/releases"
-             className="cp-download-card" target="_blank" rel="noopener noreferrer">
+          <div className="cp-download-card" style={{ opacity: 0.6, cursor: 'default' }}>
             <span className="cp-dl-icon">🪟</span>
             <span className="cp-dl-title">Windows 10 / 11 (64-bit)</span>
             <span className="cp-dl-desc">C# WPF · .NET 8 · Standalone · Includes Restic</span>
-            <span className="cp-dl-badge">AES-256 Encrypted</span>
-          </a>
+            <span className="cp-dl-badge">Coming Soon</span>
+          </div>
         </div>
-        <a href="https://github.com/HazProject/HazBackup" className="cp-github-link" target="_blank" rel="noopener noreferrer">
+        <a href="https://github.com/HazProject" className="cp-github-link" target="_blank" rel="noopener noreferrer">
           🌟 View on GitHub
         </a>
       </div>
