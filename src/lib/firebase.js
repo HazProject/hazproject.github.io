@@ -2,6 +2,7 @@
 // Analytics automatically tracks page views and visitor counts
 import { initializeApp } from 'firebase/app';
 import { getAnalytics, logEvent } from 'firebase/analytics';
+import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: "AIzaSyBiCPV1SJaQI0c8CTvsICHzcgCWxzbZjrE",
@@ -15,6 +16,7 @@ const firebaseConfig = {
 
 export const app = initializeApp(firebaseConfig);
 export const analytics = getAnalytics(app);
+export const db = getFirestore(app);
 
 // Helper: log a custom page_view with the page name
 export function trackPage(pageName) {

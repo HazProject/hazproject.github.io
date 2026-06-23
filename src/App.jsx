@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { useVisitorCount } from './hooks/useVisitorCount';
 import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import './index.css';
 import ProjectCard from './components/ProjectCard';
@@ -116,6 +117,7 @@ export default function App() {
   const bgRef    = useRef(null);
   const trailRef = useRef(null);
   const snowRef  = useRef(null);
+  const visitorCount = useVisitorCount();
 
   /* ── Ambient cursor drift background ── */
   useEffect(() => {
@@ -300,6 +302,17 @@ export default function App() {
             <main>
               <h1 className="section-heading">Projects</h1>
               <p className="section-sub">A curated collection of things I've built.</p>
+
+              {/* Visitor counter */}
+              <div className="visitor-counter" aria-label="Total site visitors">
+                <span className="visitor-dot" />
+                <span>
+                  <span className="visitor-count-num">
+                    {visitorCount === null ? '—' : visitorCount.toLocaleString()}
+                  </span>
+                  {' '}total visitors
+                </span>
+              </div>
 
               <div className="project-grid">
                 {PROJECTS.map((project) => (
