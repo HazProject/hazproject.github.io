@@ -773,11 +773,15 @@
                     const reader = new FileReader();
                     reader.onload = async (e) => {
                         try {
-                            const buffer = e.target.result;
+                            const buffer = new Uint8Array(e.target.result);
+                            const isXlsx = buffer[0] === 0x50 && buffer[1] === 0x4B;
+                            if (!isXlsx) throw new Error('This file is not a valid Excel (.xlsx) file. It may be a CSV or other format saved with .xlsx extension. Please open it in Excel and re-save it as .xlsx.');
+
                             const workbook = new ExcelJS.Workbook();
                             await workbook.xlsx.load(buffer);
 
-                            const sheet = workbook.worksheets[0] || workbook.addWorksheet('Sheet1');
+                            const sheet = workbook.worksheets[0];
+                            if (!sheet) throw new Error('No worksheets found in this file. It may be empty or corrupted.');
                             addLog(`Sheet: "${sheet.name}". Rows: ${sheet.rowCount}`, 'info');
 
                             const combinedRulesText = (activeRulesStr + '\n' + rangeInput.value).trim();
