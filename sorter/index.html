@@ -922,14 +922,14 @@
 
                                         const cellData = rowData.cells[origIndex] || { isComputed: false, value: '', style: {} };
                                         if (cellData.isComputed) {
-                                            if (cellData.type === 'mrn_4') cell.value = { formula: `RIGHT(${g_finalMrnColLetter}${currentRow},4)` };
-                                            else if (cellData.type === 'mrn_2') cell.value = { formula: `RIGHT(${g_finalMrnColLetter}${currentRow},2)` };
-                                            else if (cellData.type === 'old_mrn_year') cell.value = { formula: `RIGHT(${g_finalOldMrnColLetter}${currentRow},4)` };
+                                            if (cellData.type === 'mrn_4') cell.value = { formula: `RIGHT(${g_finalMrnColLetter}${currentRowNum},4)` };
+                                            else if (cellData.type === 'mrn_2') cell.value = { formula: `RIGHT(${g_finalMrnColLetter}${currentRowNum},2)` };
+                                            else if (cellData.type === 'old_mrn_year') cell.value = { formula: `RIGHT(${g_finalOldMrnColLetter}${currentRowNum},4)` };
                                             cell.font = { name: 'Arial', size: 10 };
                                         } else {
                                             let val = cellData.value;
                                             
-                                            if (val && typeof val === 'object' && val.formula) val = { formula: updateFormulaRow(val.formula, rowData.originalIndex, currentRow), result: val.result };
+                                            if (val && typeof val === 'object' && val.formula) val = { formula: updateFormulaRow(val.formula, rowData.originalIndex, currentRowNum), result: val.result };
                                             cell.value = val;
                                             
                                             // Apply borders
