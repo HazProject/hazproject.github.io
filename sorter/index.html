@@ -12,6 +12,8 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- ExcelJS CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <!-- SheetJS CDN (for .csv and .xls support) -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     <!-- Firebase SDK Compat -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -406,8 +408,8 @@
             <div class="dropzone" id="dropzone" style="padding: 24px 20px; gap: 8px;">
                 <i data-lucide="upload-cloud"></i>
                 <div style="font-family: var(--font-heading); font-weight: 600; font-size: 1rem; color: var(--text-primary);">Drag and Drop Excel File Here</div>
-                <div style="font-size: 0.8rem; color: var(--text-muted);">Only .xlsx files are supported</div>
-                <input type="file" id="file-input" accept=".xlsx" style="display: none;">
+                <div style="font-size: 0.8rem; color: var(--text-muted);">.xlsx, .xls, and .csv files supported</div>
+                <input type="file" id="file-input" accept=".xlsx,.xls,.csv" style="display: none;">
                 <button type="button" class="btn btn-secondary" id="browse-btn" style="pointer-events: none; padding: 6px 14px; font-size: 0.82rem;">Browse File</button>
             </div>
 
@@ -741,7 +743,8 @@
             }
 
             function handleFileSelect(file) {
-                if (!file.name.endsWith('.xlsx')) { alert('Please select a valid Excel file (.xlsx)'); return; }
+                const ext = file.name.split('.').pop().toLowerCase();
+                if (!['xlsx', 'xls', 'csv'].includes(ext)) { alert('Please select a valid file (.xlsx, .xls, or .csv)'); return; }
                 activeFile = file;
                 selectedFileDetails.classList.remove('hidden');
                 selectedFileDetails.innerHTML = `<div class="file-info"><i data-lucide="file-spreadsheet"></i><div><strong>${file.name}</strong> (${(file.size/1024).toFixed(1)} KB)</div></div>`;
@@ -774,11 +777,38 @@
                     reader.onload = async (e) => {
                         try {
                             const buffer = new Uint8Array(e.target.result);
-                            const isXlsx = buffer[0] === 0x50 && buffer[1] === 0x4B;
-                            if (!isXlsx) throw new Error('This file is not a valid Excel (.xlsx) file. It may be a CSV or other format saved with .xlsx extension. Please open it in Excel and re-save it as .xlsx.');
+                            const ext = activeFile.name.split('.').pop().toLowerCase();
+                            let workbook;
 
-                            const workbook = new ExcelJS.Workbook();
-                            await workbook.xlsx.load(buffer);
+                            if (ext === 'csv') {
+                                addLog('Detected CSV file, parsing...', 'info');
+                                const text = new TextDecoder('utf-8').decode(buffer);
+                                const xlsxWb = XLSX.read(text, { type: 'string' });
+                                const sheetData = XLSX.utils.sheet_to_json(xlsxWb.Sheets[xlsxWb.SheetNames[0]], { header: 1, defval: '' });
+                                workbook = new ExcelJS.Workbook();
+                                const ws = workbook.addWorksheet('Sheet1');
+                                sheetData.forEach((row, rIdx) => {
+                                    const excelRow = ws.getRow(rIdx + 1);
+                                    row.forEach((val, cIdx) => { excelRow.getCell(cIdx + 1).value = val; });
+                                    excelRow.commit();
+                                });
+                            } else if (ext === 'xls') {
+                                addLog('Detected .xls file, converting...', 'info');
+                                const xlsxWb = XLSX.read(buffer, { type: 'array' });
+                                const sheetData = XLSX.utils.sheet_to_json(xlsxWb.Sheets[xlsxWb.SheetNames[0]], { header: 1, defval: '' });
+                                workbook = new ExcelJS.Workbook();
+                                const ws = workbook.addWorksheet('Sheet1');
+                                sheetData.forEach((row, rIdx) => {
+                                    const excelRow = ws.getRow(rIdx + 1);
+                                    row.forEach((val, cIdx) => { excelRow.getCell(cIdx + 1).value = val; });
+                                    excelRow.commit();
+                                });
+                            } else {
+                                const isPk = buffer[0] === 0x50 && buffer[1] === 0x4B;
+                                if (!isPk) throw new Error('This file appears to be corrupted or not a valid Excel file. Please re-save it in Excel and try again.');
+                                workbook = new ExcelJS.Workbook();
+                                await workbook.xlsx.load(buffer);
+                            }
 
                             const sheet = workbook.worksheets[0];
                             if (!sheet) throw new Error('No worksheets found in this file. It may be empty or corrupted.');
