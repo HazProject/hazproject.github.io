@@ -781,7 +781,7 @@
                             let workbook;
 
                             if (ext === 'csv') {
-                                addLog('Detected CSV file, parsing...', 'info');
+                                addLog('Parsing CSV file...', 'info');
                                 const text = new TextDecoder('utf-8').decode(buffer);
                                 const xlsxWb = XLSX.read(text, { type: 'string' });
                                 const sheetData = XLSX.utils.sheet_to_json(xlsxWb.Sheets[xlsxWb.SheetNames[0]], { header: 1, defval: '' });
@@ -792,22 +792,24 @@
                                     row.forEach((val, cIdx) => { excelRow.getCell(cIdx + 1).value = val; });
                                     excelRow.commit();
                                 });
-                            } else if (ext === 'xls') {
-                                addLog('Detected .xls file, converting...', 'info');
-                                const xlsxWb = XLSX.read(buffer, { type: 'array' });
-                                const sheetData = XLSX.utils.sheet_to_json(xlsxWb.Sheets[xlsxWb.SheetNames[0]], { header: 1, defval: '' });
-                                workbook = new ExcelJS.Workbook();
-                                const ws = workbook.addWorksheet('Sheet1');
-                                sheetData.forEach((row, rIdx) => {
-                                    const excelRow = ws.getRow(rIdx + 1);
-                                    row.forEach((val, cIdx) => { excelRow.getCell(cIdx + 1).value = val; });
-                                    excelRow.commit();
-                                });
                             } else {
-                                const isPk = buffer[0] === 0x50 && buffer[1] === 0x4B;
-                                if (!isPk) throw new Error('This file appears to be corrupted or not a valid Excel file. Please re-save it in Excel and try again.');
-                                workbook = new ExcelJS.Workbook();
-                                await workbook.xlsx.load(buffer);
+                                addLog(`Parsing ${ext.toUpperCase()} file...`, 'info');
+                                try {
+                                    const xlsxWb = XLSX.read(buffer, { type: 'array', cellStyles: true });
+                                    const sheetData = XLSX.utils.sheet_to_json(xlsxWb.Sheets[xlsxWb.SheetNames[0]], { header: 1, defval: '' });
+                                    workbook = new ExcelJS.Workbook();
+                                    const ws = workbook.addWorksheet(xlsxWb.SheetNames[0] || 'Sheet1');
+                                    sheetData.forEach((row, rIdx) => {
+                                        const excelRow = ws.getRow(rIdx + 1);
+                                        row.forEach((val, cIdx) => { excelRow.getCell(cIdx + 1).value = val; });
+                                        excelRow.commit();
+                                    });
+                                    addLog(`Parsed via SheetJS (${sheetData.length} rows)`, 'success');
+                                } catch (sheetErr) {
+                                    addLog('SheetJS failed, trying ExcelJS...', 'warn');
+                                    workbook = new ExcelJS.Workbook();
+                                    await workbook.xlsx.load(buffer);
+                                }
                             }
 
                             const sheet = workbook.worksheets[0];
