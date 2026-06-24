@@ -303,17 +303,6 @@ export default function App() {
               <h1 className="section-heading">Projects</h1>
               <p className="section-sub">A curated collection of things I've built.</p>
 
-              {/* Visitor counter */}
-              <div className="visitor-counter" aria-label="Total site visitors">
-                <span className="visitor-dot" />
-                <span>
-                  <span className="visitor-count-num">
-                    {visitorCount === null ? '—' : visitorCount.toLocaleString()}
-                  </span>
-                  {' '}total visitors
-                </span>
-              </div>
-
               <div className="project-grid">
                 {PROJECTS.map((project) => (
                   <ProjectCard key={project.id} project={project} />
@@ -323,6 +312,17 @@ export default function App() {
               {/* Clean, non-intrusive Ad banner */}
               <AdBanner format="horizontal" style={{ maxWidth: '800px', margin: '40px auto 0 auto' }} />
             </main>
+
+            {/* Premium floating visitor counter */}
+            <div className="visitor-counter" aria-label="Total site visitors">
+              <span className="visitor-dot" />
+              <span>
+                <span className="visitor-count-num">
+                  {visitorCount === null ? '—' : visitorCount.toLocaleString()}
+                </span>
+                {' '}total visitors
+              </span>
+            </div>
           </div>
         } />
         <Route path="/doc-marker" element={<ErrorBoundary><DocMarker /></ErrorBoundary>} />
