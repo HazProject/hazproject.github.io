@@ -6,6 +6,7 @@ import ProjectCard from './components/ProjectCard';
 import { DocMarker } from './pages/DocMarker';
 import Consumptioness from './pages/Consumptioness';
 import HazBackup from './pages/HazBackup';
+import SocialAnalyzer from './pages/SocialAnalyzer';
 import { AdBanner } from './components/AdBanner';
 
 class ErrorBoundary extends React.Component {
@@ -104,6 +105,15 @@ const PROJECTS = [
     desc: 'Native high-performance desktop backup & restore app styled with a premium dark theme. Encrypts, deduplicates, and backs up your files (with presets for save games and developer configurations) locally and to the cloud via the integrated Restic engine.',
     link: '/#/haz-backup',
     tech: ['C# WPF', 'Restic', 'XAML', 'AES-256'],
+  },
+  {
+    id: 'social-analyzer',
+    icon: '🔍',
+    tag: 'Security',
+    title: 'Social Analyzer',
+    desc: 'OSINT username footprint checking engine. Scan 30+ major platforms for profiles matching a target handle with detailed terminal logs, confidence scores, and custom CORS proxy routing.',
+    link: '/#/social-analyzer',
+    tech: ['React', 'TypeScript', 'OSINT APIs', 'CSS'],
   },
   // ← Add more projects here
 ];
@@ -328,6 +338,7 @@ export default function App() {
         <Route path="/doc-marker" element={<ErrorBoundary><DocMarker /></ErrorBoundary>} />
         <Route path="/consumptioness" element={<Consumptioness />} />
         <Route path="/haz-backup" element={<HazBackup />} />
+        <Route path="/social-analyzer" element={<SocialAnalyzer />} />
       </Routes>
     </Router>
   );

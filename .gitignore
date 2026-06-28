@@ -31,3 +31,8 @@ dist-ssr
 
 Consumptioness/
 
+# Local projects / backend
+AuSubs/
+public/AuSubs/
+dist/AuSubs/
+
