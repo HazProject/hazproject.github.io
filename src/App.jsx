@@ -3,7 +3,6 @@ import { useVisitorCount } from './hooks/useVisitorCount';
 import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import './index.css';
 import ProjectCard from './components/ProjectCard';
-import { DocMarker } from './pages/DocMarker';
 import Consumptioness from './pages/Consumptioness';
 import HazBackup from './pages/HazBackup';
 import SocialAnalyzer from './pages/SocialAnalyzer';
@@ -70,15 +69,7 @@ const PROJECTS = [
     link: '/sorter/index.html',
     tech: ['ExcelJS', 'Firebase', 'Vanilla JS'],
   },
-  {
-    id: 'doc-marker',
-    icon: '📄',
-    tag: 'Tool',
-    title: 'Document Mark Detector',
-    desc: 'Upload documents (PDF/images) to automatically detect marks/checkmarks and convert to Excel with intelligent sorting. Includes ML-based detection and manual review capabilities.',
-    link: '/#/doc-marker',
-    tech: ['React', 'TensorFlow.js', 'PDF.js', 'Tesseract.js', 'ExcelJS'],
-  },
+
   {
     id: 'renta',
     iconImg: '/r3nta-icon.png',
@@ -335,7 +326,7 @@ export default function App() {
             </div>
           </div>
         } />
-        <Route path="/doc-marker" element={<ErrorBoundary><DocMarker /></ErrorBoundary>} />
+
         <Route path="/consumptioness" element={<Consumptioness />} />
         <Route path="/haz-backup" element={<HazBackup />} />
         <Route path="/social-analyzer" element={<SocialAnalyzer />} />
