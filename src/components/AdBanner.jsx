@@ -9,32 +9,7 @@ import React, { useEffect, useRef } from 'react';
  * @param {Object} [props.style] - Custom styles
  */
 export const AdBanner = ({ style = {} }) => {
-  const adContainerRef = useRef(null);
   const isDev = import.meta.env.DEV;
-
-  useEffect(() => {
-    if (isDev) return;
-    if (!adContainerRef.current) return;
-
-    // Clear any previous ad content
-    adContainerRef.current.innerHTML = '';
-
-    // Set Adsterra configurations globally
-    window.atOptions = {
-      'key': '65095e3e1d4df2d6cdbc9a57485f8ae2',
-      'format': 'iframe',
-      'height': 250,
-      'width': 300,
-      'params': {}
-    };
-
-    // Create the script element to invoke the ad
-    const script = document.createElement('script');
-    script.src = 'https://www.highperformanceformat.com/65095e3e1d4df2d6cdbc9a57485f8ae2/invoke.js';
-    script.async = true;
-
-    adContainerRef.current.appendChild(script);
-  }, [isDev]);
 
   if (isDev) {
     return (
@@ -67,6 +42,35 @@ export const AdBanner = ({ style = {} }) => {
     );
   }
 
+  // Inject Adsterra inside a sandboxed iframe to allow new tab clicks while blocking top-level redirects
+  const adSrcDoc = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <style>
+          body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; overflow: hidden; background: transparent; }
+        </style>
+      </head>
+      <body>
+        <div id="ad-box"></div>
+        <script type="text/javascript">
+          window.atOptions = {
+            'key': '65095e3e1d4df2d6cdbc9a57485f8ae2',
+            'format': 'iframe',
+            'height': 250,
+            'width': 300,
+            'params': {}
+          };
+          
+          var script = document.createElement('script');
+          script.src = 'https://www.highperformanceformat.com/65095e3e1d4df2d6cdbc9a57485f8ae2/invoke.js';
+          script.async = true;
+          document.body.appendChild(script);
+        </script>
+      </body>
+    </html>
+  `;
+
   return (
     <div 
       className="ad-container"
@@ -81,7 +85,16 @@ export const AdBanner = ({ style = {} }) => {
         ...style
       }}
     >
-      <div ref={adContainerRef} style={{ width: '300px', height: '250px' }} />
+      <iframe
+        title="Advertisement"
+        srcDoc={adSrcDoc}
+        width="300"
+        height="250"
+        scrolling="no"
+        frameBorder="0"
+        style={{ border: 'none', overflow: 'hidden' }}
+        sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-same-origin"
+      />
     </div>
   );
 };
