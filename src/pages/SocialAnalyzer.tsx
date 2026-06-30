@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Terminal as TerminalIcon, Settings, Shield, Link2, HelpCircle } from 'lucide-react';
+import { Search, Terminal as TerminalIcon, Settings, Link2 } from 'lucide-react';
 import './socialAnalyzer.css';
 
 interface Platform {
@@ -149,7 +149,6 @@ export default function SocialAnalyzer() {
 
       let finalStatus: 'yes' | 'maybe' | 'no' = 'no';
       let confidence = 0;
-      let details = '';
 
       const targetUrl = platform.url.replace('{}', username);
 

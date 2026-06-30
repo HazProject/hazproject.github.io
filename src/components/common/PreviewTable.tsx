@@ -3,7 +3,7 @@ import './common.css'
 
 interface PreviewTableProps {
   headers: string[]
-  rows: any[][]
+  rows: any[]
   className?: string
 }
 
