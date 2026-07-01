@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Terminal as TerminalIcon, Settings, Link2 } from 'lucide-react';
 import './socialAnalyzer.css';
+import '../components/common/common.css';
 
 interface Platform {
   name: string;
