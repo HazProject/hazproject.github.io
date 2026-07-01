@@ -42,35 +42,6 @@ export const AdBanner = ({ style = {} }) => {
     );
   }
 
-  // Inject Adsterra inside a sandboxed iframe to allow new tab clicks while blocking top-level redirects
-  const adSrcDoc = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <style>
-          body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; overflow: hidden; background: transparent; }
-        </style>
-      </head>
-      <body>
-        <div id="ad-box"></div>
-        <script type="text/javascript">
-          window.atOptions = {
-            'key': '65095e3e1d4df2d6cdbc9a57485f8ae2',
-            'format': 'iframe',
-            'height': 250,
-            'width': 300,
-            'params': {}
-          };
-          
-          var script = document.createElement('script');
-          script.src = 'https://www.highperformanceformat.com/65095e3e1d4df2d6cdbc9a57485f8ae2/invoke.js';
-          script.async = true;
-          document.body.appendChild(script);
-        </script>
-      </body>
-    </html>
-  `;
-
   return (
     <div 
       className="ad-container"
@@ -87,7 +58,7 @@ export const AdBanner = ({ style = {} }) => {
     >
       <iframe
         title="Advertisement"
-        srcDoc={adSrcDoc}
+        src="/ad.html"
         width="300"
         height="250"
         scrolling="no"
