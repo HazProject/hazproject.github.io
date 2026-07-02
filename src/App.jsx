@@ -101,10 +101,10 @@ const PROJECTS = [
     id: 'social-analyzer',
     icon: '🔍',
     tag: 'Security',
-    title: 'Social Analyzer',
-    desc: 'OSINT username footprint checking engine. Scan 30+ major platforms for profiles matching a target handle with detailed terminal logs, confidence scores, and custom CORS proxy routing.',
+    title: 'User Scanner',
+    desc: '2-in-1 Email & Username OSINT footprint Intelligence suite. Scan 30+ major platforms and email integrations with target permutations, real-time terminal logs, proxy pivoting, and multiple format exports.',
     link: '/#/social-analyzer',
-    tech: ['React', 'TypeScript', 'OSINT APIs', 'CSS'],
+    tech: ['React', 'TypeScript', 'OSINT APIs', 'CSS', 'Permutation Engine'],
   },
   // ← Add more projects here
 ];
